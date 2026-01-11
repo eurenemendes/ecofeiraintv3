@@ -356,14 +356,34 @@ const StoreDetailView = ({ products, stores, searchQuery, setSearchQuery, select
                     inputClassName="py-4 sm:py-6"
                   />
                   <div className="flex items-center space-x-1 sm:space-x-2 pr-2 sm:pr-4">
-                    <button onClick={onOpenScanner} className="p-3 bg-gray-50 dark:bg-[#0f172a] text-brand rounded-xl sm:rounded-2xl transition-all hover:scale-105 active:scale-95 border border-gray-100 dark:border-gray-800">
+                    <button onClick={() => onOpenScanner()} className="p-3 bg-gray-50 dark:bg-[#0f172a] text-brand rounded-xl sm:rounded-2xl transition-all hover:scale-105 active:scale-95 border border-gray-100 dark:border-gray-800">
                       <svg className="w-5 h-5 sm:w-6 sm:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812-1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
                     </button>
                     {searchQuery && <InputClearButton onClick={() => {setSearchQuery(''); setShowSearchSuggestions(false);}} size="sm" />}
                   </div>
                 </div>
-                {/* Fixed: Wrapped handleSearchSubmit in an arrow function */}
-                {showSearchSuggestions && storeSearchSuggestions.length > 0 && <div className="absolute top-full left-0 right-0 mt-4 bg-white/95 dark:bg-[#1e293b]/95 backdrop-blur-md rounded-2xl sm:rounded-[2.5rem] shadow-2xl border border-gray-100 dark:border-gray-800 overflow-hidden z-[200]"><div className="p-3 sm:p-5 bg-gray-50/50 dark:bg-[#0f172a]/30 border-b border-gray-100 dark:border-gray-800"><span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Ofertas no {currentStore.name}</span></div>{storeSearchSuggestions.map((s, idx) => <button key={idx} onClick={() => {setSearchQuery(s.label); setShowSearchSuggestions(false);}} className="w-full flex items-center justify-between p-4 sm:p-6 hover:bg-brand/5 transition-colors border-b border-gray-50 dark:border-gray-800/50 last:border-none group text-left"><div className="flex items-center space-x-3 sm:space-x-4"><div className={`p-2 rounded-lg sm:p-2.5 sm:rounded-xl bg-brand/10 text-brand`}><svg className="w-4 h-4 sm:w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" /></svg></div><span className="text-base sm:text-lg font-bold text-gray-700 dark:text-gray-200 group-hover:text-brand">{s.label}</span></div><span className="text-[10px] font-black text-gray-400 uppercase">{s.type}</span></button>)}</div>}
+                {showSearchSuggestions && storeSearchSuggestions.length > 0 && (
+                  <div className="absolute top-full left-0 right-0 mt-4 bg-white/95 dark:bg-[#1e293b]/95 backdrop-blur-md rounded-2xl sm:rounded-[2.5rem] shadow-2xl border border-gray-100 dark:border-gray-800 overflow-hidden z-[200]">
+                    <div className="p-3 sm:p-5 bg-gray-50/50 dark:bg-[#0f172a]/30 border-b border-gray-100 dark:border-gray-800">
+                      <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Ofertas no {currentStore.name}</span>
+                    </div>
+                    {storeSearchSuggestions.map((s, idx) => (
+                      <button 
+                        key={idx} 
+                        onClick={() => {setSearchQuery(s.label); setShowSearchSuggestions(false);}} 
+                        className="w-full flex items-center justify-between p-4 sm:p-6 hover:bg-brand/5 transition-colors border-b border-gray-50 dark:border-gray-800/50 last:border-none group text-left"
+                      >
+                        <div className="flex items-center space-x-3 sm:space-x-4">
+                          <div className={`p-2 rounded-lg sm:p-2.5 sm:rounded-xl bg-brand/10 text-brand`}>
+                            <svg className="w-4 h-4 sm:w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" /></svg>
+                          </div>
+                          <span className="text-base sm:text-lg font-bold text-gray-700 dark:text-gray-200 group-hover:text-brand">{s.label}</span>
+                        </div>
+                        <span className="text-[10px] font-black text-gray-400 uppercase">{s.type}</span>
+                      </button>
+                    ))}
+                  </div>
+                )}
               </div>
               <div className="flex-shrink-0 relative group">
                 <select 
@@ -381,9 +401,47 @@ const StoreDetailView = ({ products, stores, searchQuery, setSearchQuery, select
                 </div>
               </div>
             </div>
-            <div className="overflow-hidden"><span className="text-[10px] font-[900] text-gray-400 dark:text-gray-500 uppercase tracking-[1px] mb-4 block">CATEGORIAS DISPONÍVEIS:</span><div ref={storeCategoriesRef} className="flex items-center gap-2 sm:gap-4 overflow-x-auto no-scrollbar pb-2 cursor-grab select-none active:cursor-grabbing">{categories.map(cat => (cat === 'Todas' || products.some(p => p.supermarket === currentStore.name && p.category === cat)) ? <button key={cat} onClick={() => setSelectedCategory(cat)} className={`flex-shrink-0 px-8 sm:px-12 py-3 sm:py-5 rounded-xl sm:rounded-[1.8rem] text-xs sm:text-[15px] font-[800] transition-all shadow-sm ${selectedCategory === cat ? 'bg-brand text-white shadow-xl shadow-brand/30 scale-105' : 'bg-white dark:bg-[#1e293b] text-gray-600 dark:text-gray-300 border border-gray-100 dark:border-gray-800 hover:border-brand'}`}>{cat}</button> : null)}</div></div>
+            <div className="overflow-hidden">
+              <span className="text-[10px] font-[900] text-gray-400 dark:text-gray-500 uppercase tracking-[1px] mb-4 block">CATEGORIAS DISPONÍVEIS:</span>
+              <div ref={storeCategoriesRef} className="flex items-center gap-2 sm:gap-4 overflow-x-auto no-scrollbar pb-2 cursor-grab select-none active:cursor-grabbing">
+                {categories.map(cat => (cat === 'Todas' || products.some(p => p.supermarket === currentStore.name && p.category === cat)) ? (
+                  <button 
+                    key={cat} 
+                    onClick={() => setSelectedCategory(cat)} 
+                    className={`flex-shrink-0 px-8 sm:px-12 py-3 sm:py-5 rounded-xl sm:rounded-[1.8rem] text-xs sm:text-[15px] font-[800] transition-all shadow-sm ${selectedCategory === cat ? 'bg-brand text-white shadow-xl shadow-brand/30 scale-105' : 'bg-white dark:bg-[#1e293b] text-gray-600 dark:text-gray-300 border border-gray-100 dark:border-gray-800 hover:border-brand'}`}
+                  >
+                    {cat}
+                  </button>
+                ) : null)}
+              </div>
+            </div>
           </div>
-          {paginatedStoreProducts.length > 0 ? <><div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-12">{paginatedStoreProducts.map((p) => <ProductCard key={p.id} product={p} onAddToList={addToList} onToggleFavorite={toggleFavorite} isFavorite={favorites.includes(p.id)} storeLogo={currentStore.logo} user={user} />)}</div><ProductPagination currentPage={currentPage} totalPages={totalStorePages} onPageChange={setCurrentPage} /></> : <div className="text-center py-24 sm:py-40 bg-white dark:bg-[#1e293b] rounded-2xl sm:rounded-[4rem] border-2 border-dashed border-gray-100 dark:border-gray-800 flex flex-col items-center px-4"><div className="w-20 h-20 sm:w-32 sm:h-32 bg-gray-50 dark:bg-[#0f172a] rounded-2xl sm:rounded-[2.5rem] flex items-center justify-center mb-6 sm:mb-10 shadow-inner"><svg className="w-10 h-10 sm:w-16 sm:h-16 text-gray-300 dark:text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" /></svg></div><p className="text-gray-400 dark:text-gray-500 font-[800] text-xl sm:text-3xl tracking-tight mb-4">Nenhuma oferta encontrada</p><p className="text-gray-400 dark:text-gray-600 font-bold max-w-md mx-auto">Tente ajustar seus filtros.</p></div>}
+          {paginatedStoreProducts.length > 0 ? (
+            <>
+              <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-12">
+                {paginatedStoreProducts.map((p) => (
+                  <ProductCard 
+                    key={p.id} 
+                    product={p} 
+                    onAddToList={addToList} 
+                    onToggleFavorite={toggleFavorite} 
+                    isFavorite={favorites.includes(p.id)} 
+                    storeLogo={currentStore.logo} 
+                    user={user} 
+                  />
+                ))}
+              </div>
+              <ProductPagination currentPage={currentPage} totalPages={totalStorePages} onPageChange={setCurrentPage} />
+            </>
+          ) : (
+            <div className="text-center py-24 sm:py-40 bg-white dark:bg-[#1e293b] rounded-2xl sm:rounded-[4rem] border-2 border-dashed border-gray-100 dark:border-gray-800 flex flex-col items-center px-4">
+              <div className="w-20 h-20 sm:w-32 sm:h-32 bg-gray-50 dark:bg-[#0f172a] rounded-2xl sm:rounded-[2.5rem] flex items-center justify-center mb-6 sm:mb-10 shadow-inner">
+                <svg className="w-10 h-10 sm:w-16 sm:h-16 text-gray-300 dark:text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" /></svg>
+              </div>
+              <p className="text-gray-400 dark:text-gray-500 font-[800] text-xl sm:text-3xl tracking-tight mb-4">Nenhuma oferta encontrada</p>
+              <p className="text-gray-400 dark:text-gray-600 font-bold max-w-md mx-auto">Tente ajustar seus filtros.</p>
+            </div>
+          )}
         </div>
       </div>
   );
@@ -445,7 +503,6 @@ const App: React.FC = () => {
   const handleLogin = async () => { 
     try { 
       const result = await signInWithPopup(auth, googleProvider); 
-      // Captura o accessToken para uso simultâneo no Drive API
       const credential = GoogleAuthProvider.credentialFromResult(result);
       if (credential?.accessToken) {
         sessionStorage.setItem('ecofeira_google_access_token', credential.accessToken);
@@ -610,27 +667,139 @@ const App: React.FC = () => {
       
       {scanErrorMessage && <div className="fixed top-24 left-1/2 -translate-x-1/2 z-[500] bg-red-500 text-white px-8 py-4 rounded-2xl shadow-2xl font-black text-sm uppercase tracking-widest animate-in slide-in-from-top-4 duration-300"><div className="flex items-center space-x-3"><svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg><span>{scanErrorMessage}</span></div></div>}
       <Routes>
-        <Route path="/" element={<div className="space-y-12 sm:space-y-24"><div className="text-center max-w-4xl mx-auto space-y-6 sm:space-y-8 pt-4 relative overflow-hidden"><div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-[18vw] sm:text-[12vw] font-[900] text-brand/10 dark:text-brand/5 pointer-events-none select-none tracking-tighter leading-none z-0">economize</div><div className="relative z-10 px-4"><h1 className="text-4xl sm:text-8xl font-[900] text-[#111827] dark:text-white tracking-tighter leading-none animate-in fade-in slide-in-from-top-4 duration-700">Compare e <span className="text-brand">economize</span></h1><p className="text-gray-500 dark:text-gray-400 text-base sm:text-xl font-medium max-w-3xl mx-auto leading-relaxed mt-4 sm:mt-8">Explore <span className="text-gray-900 dark:text-white font-black">{stats.stores} estabelecimentos parceiros</span>, <span className="text-gray-900 dark:text-white font-black">{stats.products} produtos</span>, <span className="text-gray-900 dark:text-white font-black">{stats.categories} categorias</span> e <span className="text-brand font-black">{stats.promos} promoções</span> ativas.</p></div></div><StoreMarquee stores={stores} /><div className="max-w-4xl mx-auto space-y-8 sm:space-y-10 px-4 mb-8 sm:mb-16"><div className="relative group" ref={searchSuggestionRef}><div className="absolute inset-0 bg-brand/10 blur-3xl rounded-full scale-90 group-focus-within:scale-100 transition-transform duration-700"></div><div className="relative flex flex-col sm:flex-row bg-white dark:bg-[#1e293b] rounded-3xl sm:rounded-[2.5rem] p-3 shadow-2xl border border-gray-100 dark:border-gray-800 transition-all focus-within:ring-2 focus-within:ring-brand/20"><div className="flex items-center justify-center sm:justify-start flex-grow px-3 sm:px-8 border-2 border-brand/40 sm:border-none rounded-2xl mb-2 sm:mb-0">
-                  <SearchInput 
-                    value={searchQuery}
-                    onChange={(val: string) => {setSearchQuery(val); setShowSearchSuggestions(true);}}
-                    onFocus={() => setShowSearchSuggestions(true)}
-                    onKeyDown={(e) => e.key === 'Enter' && handleSearchSubmit(searchQuery)}
-                    placeholder="O que você procura?"
-                  />
-                </div><div className="flex items-center justify-center sm:justify-end space-x-2 sm:space-x-4 px-2 pr-4"><button onClick={() => setIsScannerOpen(true)} className="bg-[#0f172a] hover:bg-brand/20 text-brand p-3 sm:p-6 rounded-full transition-all border border-gray-800 shadow-sm hover:scale-105 active:scale-95 flex items-center justify-center aspect-square"><svg className="w-5 h-5 sm:w-7 sm:h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812-1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" /></svg></button>{searchQuery ? <InputClearButton onClick={() => {setSearchQuery(''); setShowSearchSuggestions(false);}} size="lg" /> : <SearchButton onClick={() => handleSearchSubmit(searchQuery)} />}</div></div>{showSearchSuggestions && <div className="absolute top-full left-0 right-0 mt-4 bg-white/95 dark:bg-[#1e293b]/95 backdrop-blur-md rounded-2xl sm:rounded-[2.5rem] shadow-2xl border border-gray-100 dark:border-gray-800 overflow-hidden z-[200]">{searchQuery.length === 0 && (recentSearches.length > 0 || scannedHistory.length > 0) && <div className="animate-in fade-in duration-300">{scannedHistory.length > 0 && <><div className="p-3 sm:p-5 bg-gray-50/50 dark:bg-[#0f172a]/30 border-b border-gray-100 flex justify-between items-center"><span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Códigos Escaneados</span><button onClick={() => setScannedHistory([])} className="text-[10px] font-black text-red-400 uppercase tracking-widest hover:text-red-600">Limpar</button></div>{scannedHistory.map((code: string, idx: number) => <button key={idx} onClick={() => handleSearchSubmit(code)} className="w-full flex items-center justify-between p-4 sm:p-6 hover:bg-brand/5 border-b border-gray-50 dark:border-gray-800/50 group text-left"><div className="flex items-center space-x-3 sm:space-x-4"><div className="p-2 sm:p-2.5 rounded-lg bg-orange-50 text-orange-500"><svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M12 4v1l-3 3h6l-3-3V4zM4 10h16v10H4V10z" /></svg></div><span className="text-base sm:text-lg font-bold text-gray-700 dark:text-gray-200 group-hover:text-brand">{code}</span></div><span className="text-[10px] font-black text-gray-400 uppercase">Código</span></button>)}</}{recentSearches.length > 0 && <><div className="p-3 sm:p-5 bg-gray-50/50 dark:bg-[#0f172a]/30 border-b border-gray-100"><span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Pesquisas Recentes</span></div>{recentSearches.map((s: string, idx: number) => <div key={idx} className="w-full flex items-center justify-between p-4 sm:p-6 hover:bg-brand/5 border-b border-gray-50 last:border-none group"><button onClick={() => handleSearchSubmit(s)} className="flex items-center space-x-3 sm:space-x-4 flex-grow text-left"><div className="p-2 sm:p-2.5 rounded-lg bg-gray-100 dark:bg-gray-800 text-gray-400 group-hover:bg-brand group-hover:text-white transition-all"><svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg></div><span className="text-base sm:text-lg font-bold text-gray-700 dark:text-gray-200 group-hover:text-brand">{s}</span></button></div>)}</>}</div>}{searchSuggestions.length > 0 && <div className="animate-in fade-in duration-300"><div className="p-3 sm:p-5 bg-gray-50/50 dark:bg-[#0f172a]/30 border-b border-gray-100"><span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Sugestões EcoFeira</span></div>{/* Fixed: Wrapped handleSearchSubmit in arrow function */}{searchSuggestions.map((s: {label: string, type: string}, idx: number) => <button key={idx} onClick={() => handleSearchSubmit(s.label)} className="w-full flex items-center justify-between p-4 sm:p-6 hover:bg-brand/5 border-b border-gray-50 last:border-none group text-left"><div className="flex items-center space-x-3 sm:space-x-4"><div className={`p-2 rounded-lg ${s.type === 'categoria' ? 'bg-orange-50 text-orange-500' : 'bg-brand/10 text-brand'}`}>{s.type === 'categoria' ? <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" /></svg> : <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" /></svg>}</div><span className="text-base sm:text-lg font-bold text-gray-700 dark:text-gray-200 group-hover:text-brand">{s.label}</span></div><span className="text-[10px] font-black text-gray-400 uppercase">{s.type}</span></button>)}</div>}</div>}</div><div className="flex flex-wrap items-center justify-center gap-2 sm:gap-4"><span className="text-[10px] font-[900] text-gray-400 uppercase tracking-widest block w-full text-center sm:w-auto sm:mr-4">Sugestões Populares</span>{popularSuggestions.map(tag => <button key={tag} onClick={() => {setSearchQuery(tag); setOnlyPromos(false); handleSearchSubmit(tag);}} className="bg-white dark:bg-[#1e293b] border border-gray-100 dark:border-gray-800 px-4 py-2 rounded-lg text-xs sm:text-[15px] font-[800] text-gray-700 dark:text-gray-300 hover:border-brand hover:text-brand transition-all">{tag}</button>)}</div></div>{mainBanners.length > 0 && <BannerCarousel banners={mainBanners} />}</div>} />
-        <Route path="/produtos" element={<div className="space-y-8 sm:space-y-16"><div className="flex flex-col space-y-6 sm:space-y-10"><div className="flex flex-row items-center gap-3 sm:gap-6"><div className="relative flex-grow group" ref={searchSuggestionRef}><div className="absolute inset-0 bg-brand/10 blur-3xl rounded-full scale-90 group-focus-within:scale-100 transition-transform duration-700"></div><div className="relative flex items-center bg-white dark:bg-[#1e293b] rounded-xl sm:rounded-[2.5rem] p-1.5 shadow-2xl border border-gray-100 dark:border-gray-800 transition-all focus-within:ring-2 focus-within:ring-brand/20">
-                  <SearchInput 
-                    value={searchQuery}
-                    onChange={(val: string) => {setSearchQuery(val); setShowSearchSuggestions(true);}}
-                    onFocus={() => setShowSearchSuggestions(true)}
-                    onKeyDown={(e) => e.key === 'Enter' && handleSearchSubmit(searchQuery)}
-                    placeholder="Pesquisar itens..."
-                    iconClassName="text-gray-400 group-focus-within:text-brand transition-colors"
-                    hideIconOnMobile={false}
-                    inputClassName="font-[800] py-4 sm:py-6"
-                  />
-                  <div className="flex items-center space-x-2 pr-2 sm:pr-4"><button onClick={() => setIsScannerOpen(true)} className="bg-[#0f172a] hover:bg-brand/20 text-brand rounded-full transition-all border border-gray-100 dark:border-gray-800 flex items-center justify-center aspect-square p-3 sm:p-5"><svg className="w-5 h-5 sm:w-6 sm:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812-1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" /><path d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" /></svg></button>{searchQuery && <InputClearButton onClick={() => {setSearchQuery(''); setShowSearchSuggestions(false);}} size="md" />}</div></div>{showSearchSuggestions && <div className="absolute top-full left-0 right-0 mt-4 bg-white/95 dark:bg-[#1e293b]/95 backdrop-blur-md rounded-2xl shadow-2xl border border-gray-100 dark:border-gray-800 overflow-hidden z-[200]">{searchSuggestions.length > 0 && <div className="animate-in fade-in duration-300">{/* Fixed: Wrapped handleSearchSubmit in arrow function */}{searchSuggestions.map((s: {label: string, type: string}, idx: number) => <button key={idx} onClick={() => handleSearchSubmit(s.label)} className="w-full flex items-center justify-between p-4 sm:p-6 hover:bg-brand/5 border-b border-gray-50 dark:border-gray-800/50 last:border-none group text-left text-gray-700 dark:text-gray-200"><div className="flex items-center space-x-3 sm:space-x-4"><div className={`p-2 rounded-lg ${s.type === 'categoria' ? 'bg-orange-50 text-orange-500' : 'bg-brand/10 text-brand'}`}>{s.type === 'categoria' ? <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" /></svg> : <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" /></svg>}</div><span className="text-base sm:text-lg font-bold group-hover:text-brand">{s.label}</span></div><span className="text-[10px] font-black uppercase">{s.type}</span></button>)}</div>}</div>}</div><div className="flex-shrink-0 relative group">
+        <Route path="/" element={
+          <div className="space-y-12 sm:space-y-24">
+            <div className="text-center max-w-4xl mx-auto space-y-6 sm:space-y-8 pt-4 relative overflow-hidden">
+              <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-[18vw] sm:text-[12vw] font-[900] text-brand/10 dark:text-brand/5 pointer-events-none select-none tracking-tighter leading-none z-0">economize</div>
+              <div className="relative z-10 px-4">
+                <h1 className="text-4xl sm:text-8xl font-[900] text-[#111827] dark:text-white tracking-tighter leading-none animate-in fade-in slide-in-from-top-4 duration-700">Compare e <span className="text-brand">economize</span></h1>
+                <p className="text-gray-500 dark:text-gray-400 text-base sm:text-xl font-medium max-w-3xl mx-auto leading-relaxed mt-4 sm:mt-8">Explore <span className="text-gray-900 dark:text-white font-black">{stats.stores} estabelecimentos parceiros</span>, <span className="text-gray-900 dark:text-white font-black">{stats.products} produtos</span>, <span className="text-gray-900 dark:text-white font-black">{stats.categories} categorias</span> e <span className="text-brand font-black">{stats.promos} promoções</span> ativas.</p>
+              </div>
+            </div>
+            <StoreMarquee stores={stores} />
+            <div className="max-w-4xl mx-auto space-y-8 sm:space-y-10 px-4 mb-8 sm:mb-16">
+              <div className="relative group" ref={searchSuggestionRef}>
+                <div className="absolute inset-0 bg-brand/10 blur-3xl rounded-full scale-90 group-focus-within:scale-100 transition-transform duration-700"></div>
+                <div className="relative flex flex-col sm:flex-row bg-white dark:bg-[#1e293b] rounded-3xl sm:rounded-[2.5rem] p-3 shadow-2xl border border-gray-100 dark:border-gray-800 transition-all focus-within:ring-2 focus-within:ring-brand/20">
+                  <div className="flex items-center justify-center sm:justify-start flex-grow px-3 sm:px-8 border-2 border-brand/40 sm:border-none rounded-2xl mb-2 sm:mb-0">
+                    <SearchInput 
+                      value={searchQuery}
+                      onChange={(val: string) => {setSearchQuery(val); setShowSearchSuggestions(true);}}
+                      onFocus={() => setShowSearchSuggestions(true)}
+                      onKeyDown={(e) => e.key === 'Enter' && handleSearchSubmit(searchQuery)}
+                      placeholder="O que você procura?"
+                    />
+                  </div>
+                  <div className="flex items-center justify-center sm:justify-end space-x-2 sm:space-x-4 px-2 pr-4">
+                    <button onClick={() => setIsScannerOpen(true)} className="bg-[#0f172a] hover:bg-brand/20 text-brand p-3 sm:p-6 rounded-full transition-all border border-gray-800 shadow-sm hover:scale-105 active:scale-95 flex items-center justify-center aspect-square">
+                      <svg className="w-5 h-5 sm:w-7 sm:h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812-1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+                    </button>
+                    {searchQuery ? <InputClearButton onClick={() => {setSearchQuery(''); setShowSearchSuggestions(false);}} size="lg" /> : <SearchButton onClick={() => handleSearchSubmit(searchQuery)} />}
+                  </div>
+                </div>
+                {showSearchSuggestions && (
+                  <div className="absolute top-full left-0 right-0 mt-4 bg-white/95 dark:bg-[#1e293b]/95 backdrop-blur-md rounded-2xl sm:rounded-[2.5rem] shadow-2xl border border-gray-100 dark:border-gray-800 overflow-hidden z-[200]">
+                    {searchQuery.length === 0 && (recentSearches.length > 0 || scannedHistory.length > 0) && (
+                      <div className="animate-in fade-in duration-300">
+                        {scannedHistory.length > 0 && (
+                          <>
+                            <div className="p-3 sm:p-5 bg-gray-50/50 dark:bg-[#0f172a]/30 border-b border-gray-100 flex justify-between items-center">
+                              <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Códigos Escaneados</span>
+                              <button onClick={() => setScannedHistory([])} className="text-[10px] font-black text-red-400 uppercase tracking-widest hover:text-red-600">Limpar</button>
+                            </div>
+                            {scannedHistory.map((code: string, idx: number) => (
+                              <button key={idx} onClick={() => handleSearchSubmit(code)} className="w-full flex items-center justify-between p-4 sm:p-6 hover:bg-brand/5 border-b border-gray-50 dark:border-gray-800/50 group text-left">
+                                <div className="flex items-center space-x-3 sm:space-x-4">
+                                  <div className="p-2 sm:p-2.5 rounded-lg bg-orange-50 text-orange-500"><svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M12 4v1l-3 3h6l-3-3V4zM4 10h16v10H4V10z" /></svg></div>
+                                  <span className="text-base sm:text-lg font-bold text-gray-700 dark:text-gray-200 group-hover:text-brand">{code}</span>
+                                </div>
+                                <span className="text-[10px] font-black text-gray-400 uppercase">Código</span>
+                              </button>
+                            ))}
+                          </>
+                        )}
+                        {recentSearches.length > 0 && (
+                          <>
+                            <div className="p-3 sm:p-5 bg-gray-50/50 dark:bg-[#0f172a]/30 border-b border-gray-100"><span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Pesquisas Recentes</span></div>
+                            {recentSearches.map((s: string, idx: number) => (
+                              <div key={idx} className="w-full flex items-center justify-between p-4 sm:p-6 hover:bg-brand/5 border-b border-gray-50 last:border-none group">
+                                <button onClick={() => handleSearchSubmit(s)} className="flex items-center space-x-3 sm:space-x-4 flex-grow text-left">
+                                  <div className="p-2 sm:p-2.5 rounded-lg bg-gray-100 dark:bg-gray-800 text-gray-400 group-hover:bg-brand group-hover:text-white transition-all"><svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg></div>
+                                  <span className="text-base sm:text-lg font-bold text-gray-700 dark:text-gray-200 group-hover:text-brand">{s}</span>
+                                </button>
+                              </div>
+                            ))}
+                          </>
+                        )}
+                      </div>
+                    )}
+                    {searchSuggestions.length > 0 && (
+                      <div className="animate-in fade-in duration-300">
+                        <div className="p-3 sm:p-5 bg-gray-50/50 dark:bg-[#0f172a]/30 border-b border-gray-100"><span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Sugestões EcoFeira</span></div>
+                        {searchSuggestions.map((s: {label: string, type: string}, idx: number) => (
+                          <button key={idx} onClick={() => handleSearchSubmit(s.label)} className="w-full flex items-center justify-between p-4 sm:p-6 hover:bg-brand/5 border-b border-gray-50 last:border-none group text-left">
+                            <div className="flex items-center space-x-3 sm:space-x-4">
+                              <div className={`p-2 rounded-lg ${s.type === 'categoria' ? 'bg-orange-50 text-orange-500' : 'bg-brand/10 text-brand'}`}>
+                                {s.type === 'categoria' ? <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" /></svg> : <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" /></svg>}
+                              </div>
+                              <span className="text-base sm:text-lg font-bold text-gray-700 dark:text-gray-200 group-hover:text-brand">{s.label}</span>
+                            </div>
+                            <span className="text-[10px] font-black text-gray-400 uppercase">{s.type}</span>
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+              <div className="flex flex-wrap items-center justify-center gap-2 sm:gap-4"><span className="text-[10px] font-[900] text-gray-400 uppercase tracking-widest block w-full text-center sm:w-auto sm:mr-4">Sugestões Populares</span>{popularSuggestions.map(tag => <button key={tag} onClick={() => {setSearchQuery(tag); setOnlyPromos(false); handleSearchSubmit(tag);}} className="bg-white dark:bg-[#1e293b] border border-gray-100 dark:border-gray-800 px-4 py-2 rounded-lg text-xs sm:text-[15px] font-[800] text-gray-700 dark:text-gray-300 hover:border-brand hover:text-brand transition-all">{tag}</button>)}</div>
+            </div>
+            {mainBanners.length > 0 && <BannerCarousel banners={mainBanners} />}
+          </div>
+        } />
+        <Route path="/produtos" element={
+          <div className="space-y-8 sm:space-y-16">
+            <div className="flex flex-col space-y-6 sm:space-y-10">
+              <div className="flex flex-row items-center gap-3 sm:gap-6">
+                <div className="relative flex-grow group" ref={searchSuggestionRef}>
+                  <div className="absolute inset-0 bg-brand/10 blur-3xl rounded-full scale-90 group-focus-within:scale-100 transition-transform duration-700"></div>
+                  <div className="relative flex items-center bg-white dark:bg-[#1e293b] rounded-xl sm:rounded-[2.5rem] p-1.5 shadow-2xl border border-gray-100 dark:border-gray-800 transition-all focus-within:ring-2 focus-within:ring-brand/20">
+                    <SearchInput 
+                      value={searchQuery}
+                      onChange={(val: string) => {setSearchQuery(val); setShowSearchSuggestions(true);}}
+                      onFocus={() => setShowSearchSuggestions(true)}
+                      onKeyDown={(e) => e.key === 'Enter' && handleSearchSubmit(searchQuery)}
+                      placeholder="Pesquisar itens..."
+                      iconClassName="text-gray-400 group-focus-within:text-brand transition-colors"
+                      hideIconOnMobile={false}
+                      inputClassName="font-[800] py-4 sm:py-6"
+                    />
+                    <div className="flex items-center space-x-2 pr-2 sm:pr-4">
+                      <button onClick={() => setIsScannerOpen(true)} className="bg-[#0f172a] hover:bg-brand/20 text-brand rounded-full transition-all border border-gray-100 dark:border-gray-800 flex items-center justify-center aspect-square p-3 sm:p-5">
+                        <svg className="w-5 h-5 sm:w-6 sm:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812-1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" /><path d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+                      </button>
+                      {searchQuery && <InputClearButton onClick={() => {setSearchQuery(''); setShowSearchSuggestions(false);}} size="md" />}
+                    </div>
+                  </div>
+                  {showSearchSuggestions && searchSuggestions.length > 0 && (
+                    <div className="absolute top-full left-0 right-0 mt-4 bg-white/95 dark:bg-[#1e293b]/95 backdrop-blur-md rounded-2xl shadow-2xl border border-gray-100 dark:border-gray-800 overflow-hidden z-[200]">
+                      <div className="animate-in fade-in duration-300">
+                        {searchSuggestions.map((s, idx) => (
+                          <button key={idx} onClick={() => handleSearchSubmit(s.label)} className="w-full flex items-center justify-between p-4 sm:p-6 hover:bg-brand/5 border-b border-gray-50 dark:border-gray-800/50 last:border-none group text-left text-gray-700 dark:text-gray-200">
+                            <div className="flex items-center space-x-3 sm:space-x-4">
+                              <div className={`p-2 rounded-lg ${s.type === 'categoria' ? 'bg-orange-50 text-orange-500' : 'bg-brand/10 text-brand'}`}>
+                                {s.type === 'categoria' ? <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" /></svg> : <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" /></svg>}
+                              </div>
+                              <span className="text-base sm:text-lg font-bold group-hover:text-brand">{s.label}</span>
+                            </div>
+                            <span className="text-[10px] font-black uppercase">{s.type}</span>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+                <div className="flex-shrink-0 relative group">
                   <select 
                     value={sortBy} 
                     onChange={(e) => setSortBy(e.target.value as any)} 
@@ -644,7 +813,17 @@ const App: React.FC = () => {
                   <div className="flex items-center bg-white dark:bg-[#1e293b] p-3 sm:p-5 rounded-xl border border-gray-100 dark:border-gray-800 shadow-sm transition-all group-hover:text-brand text-gray-400">
                     <svg className="w-5 h-5 sm:w-6 sm:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" /></svg>
                   </div>
-                </div></div><div className="space-y-6 sm:space-y-10"><div className="overflow-hidden"><span className="text-[10px] font-[900] text-gray-400 uppercase tracking-[1px] mb-3 block">CATEGORIAS:</span><div ref={categoriesRef} className="flex items-center gap-2 sm:gap-4 overflow-x-auto no-scrollbar pb-2 cursor-grab select-none active:cursor-grabbing">{categories.map(cat => <button key={cat} onClick={() => setSelectedCategory(cat)} className={`flex-shrink-0 px-6 py-3 rounded-xl sm:rounded-[1.5rem] text-xs sm:text-[15px] font-[800] transition-all shadow-sm ${selectedCategory === cat ? 'bg-brand text-white shadow-xl shadow-brand/30 scale-105' : 'bg-white dark:bg-[#1e293b] text-gray-600 dark:text-gray-300 border border-gray-100 dark:border-gray-800 hover:border-brand'}`}>{cat}</button>)}</div></div><div className="overflow-hidden"><span className="text-[10px] font-[900] text-gray-400 uppercase tracking-[1px] mb-3 block">LOJAS:</span><div ref={storesRef} className="flex items-center gap-2 sm:gap-4 overflow-x-auto no-scrollbar pb-2 cursor-grab select-none active:cursor-grabbing">{supermarketNames.map(store => <button key={store} onClick={() => setSelectedSupermarket(store)} className={`flex-shrink-0 px-6 py-3 rounded-xl sm:rounded-[1.5rem] text-xs sm:text-[15px] font-[800] transition-all shadow-sm flex items-center space-x-2 ${selectedSupermarket === store ? 'bg-brand text-white shadow-xl shadow-brand/30 scale-105' : 'bg-white dark:bg-[#1e293b] text-gray-600 dark:text-gray-300 border border-gray-100 dark:border-gray-800 hover:border-brand'}`}>{store}</button>)}</div></div></div></div><div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-12">{filteredProducts.slice((currentPage-1)*ITEMS_PER_PAGE, currentPage*ITEMS_PER_PAGE).map((p, idx) => <ProductCard key={p.id} product={p} onAddToList={addToList} onToggleFavorite={toggleFavorite} isFavorite={favorites.includes(p.id)} storeLogo={stores.find(s => s.name === p.supermarket)?.logo} user={user} />)}</div><ProductPagination currentPage={currentPage} totalPages={Math.ceil(filteredProducts.length/ITEMS_PER_PAGE)} onPageChange={setCurrentPage} /></div>} />
+                </div>
+              </div>
+              <div className="space-y-6 sm:space-y-10">
+                <div className="overflow-hidden"><span className="text-[10px] font-[900] text-gray-400 uppercase tracking-[1px] mb-3 block">CATEGORIAS:</span><div ref={categoriesRef} className="flex items-center gap-2 sm:gap-4 overflow-x-auto no-scrollbar pb-2 cursor-grab select-none active:cursor-grabbing">{categories.map(cat => <button key={cat} onClick={() => setSelectedCategory(cat)} className={`flex-shrink-0 px-6 py-3 rounded-xl sm:rounded-[1.5rem] text-xs sm:text-[15px] font-[800] transition-all shadow-sm ${selectedCategory === cat ? 'bg-brand text-white shadow-xl shadow-brand/30 scale-105' : 'bg-white dark:bg-[#1e293b] text-gray-600 dark:text-gray-300 border border-gray-100 dark:border-gray-800 hover:border-brand'}`}>{cat}</button>)}</div></div>
+                <div className="overflow-hidden"><span className="text-[10px] font-[900] text-gray-400 uppercase tracking-[1px] mb-3 block">LOJAS:</span><div ref={storesRef} className="flex items-center gap-2 sm:gap-4 overflow-x-auto no-scrollbar pb-2 cursor-grab select-none active:cursor-grabbing">{supermarketNames.map(store => <button key={store} onClick={() => setSelectedSupermarket(store)} className={`flex-shrink-0 px-6 py-3 rounded-xl sm:rounded-[1.5rem] text-xs sm:text-[15px] font-[800] transition-all shadow-sm flex items-center space-x-2 ${selectedSupermarket === store ? 'bg-brand text-white shadow-xl shadow-brand/30 scale-105' : 'bg-white dark:bg-[#1e293b] text-gray-600 dark:text-gray-300 border border-gray-100 dark:border-gray-800 hover:border-brand'}`}>{store}</button>)}</div></div>
+              </div>
+            </div>
+            <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-12">{filteredProducts.slice((currentPage-1)*ITEMS_PER_PAGE, currentPage*ITEMS_PER_PAGE).map((p) => <ProductCard key={p.id} product={p} onAddToList={addToList} onToggleFavorite={toggleFavorite} isFavorite={favorites.includes(p.id)} storeLogo={stores.find(s => s.name === p.supermarket)?.logo} user={user} />)}</div>
+            <ProductPagination currentPage={currentPage} totalPages={Math.ceil(filteredProducts.length/ITEMS_PER_PAGE)} onPageChange={setCurrentPage} />
+          </div>
+        } />
         <Route path="/supermercados" element={<Lojas stores={stores} onStoreClick={openStoreDetail} favoriteStores={favoriteStores} onToggleFavoriteStore={toggleFavoriteStore} />} />
         <Route path="/perfil" element={<ProfileView user={user} favoritesCount={favorites.length + favoriteStores.length} shoppingListCount={shoppingList.length} onLogout={handleLogout} onLogin={handleLogin} />} />
         <Route path="/perfil/backup" element={<BackupView user={user} />} />
