@@ -14,7 +14,12 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
+
 const googleProvider = new GoogleAuthProvider();
+// Adiciona escopos para o Google Drive API
+// 'drive.appdata' é ideal para armazenar backups ocultos do app
+googleProvider.addScope('https://www.googleapis.com/auth/drive.appdata');
+googleProvider.addScope('https://www.googleapis.com/auth/drive.file');
 
 export { auth, googleProvider, signInWithPopup, signOut, onAuthStateChanged };
 export type { User };
