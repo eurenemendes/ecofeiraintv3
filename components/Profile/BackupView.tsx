@@ -24,7 +24,6 @@ export const BackupView: React.FC<BackupViewProps> = ({ user }) => {
   const BACKUP_SYSTEM_URL = "https://drivervault.vercel.app/";
   
   // Client ID do Google Cloud (Configurado para o projeto EcoFeira)
-  // Nota: Este ID deve estar com o domínio atual autorizado no Console do Google
   const GOOGLE_CLIENT_ID = '349676062186-jsle32i8463qpad128u2g7grjtj4td33.apps.googleusercontent.com';
 
   // Função para enviar resposta do token de volta para o iframe filho
@@ -46,7 +45,7 @@ export const BackupView: React.FC<BackupViewProps> = ({ user }) => {
     }
   }, [BACKUP_SYSTEM_URL]);
 
-  // Callback executado quando o Google retorna o token
+  // Callback executado quando o Google retorna o token manualmente
   const handleTokenResponse = useCallback((response: any) => {
     if (response && response.access_token) {
       sendTokenToChild(response.access_token);
@@ -65,7 +64,6 @@ export const BackupView: React.FC<BackupViewProps> = ({ user }) => {
       if (window.google) {
         tokenClientRef.current = window.google.accounts.oauth2.initTokenClient({
           client_id: GOOGLE_CLIENT_ID,
-          // Escopo atualizado para incluir drive.appdata, necessário para o DriverVault
           scope: 'https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/drive.appdata',
           callback: handleTokenResponse,
         });
@@ -74,7 +72,6 @@ export const BackupView: React.FC<BackupViewProps> = ({ user }) => {
     document.body.appendChild(script);
 
     return () => {
-      // Remove o script ao desmontar se necessário, embora scripts GSI costumem ficar globais
       const existingScript = document.querySelector('script[src="https://accounts.google.com/gsi/client"]');
       if (existingScript) document.body.removeChild(existingScript);
     };
@@ -97,24 +94,31 @@ export const BackupView: React.FC<BackupViewProps> = ({ user }) => {
 
       const { type, payload } = event.data;
 
-      // O sistema filho informa que carregou e está pronto
       if (type === 'ECOFEIRA_BACKUP_READY') {
         console.log("✅ EcoFeira: DriverVault pronto para operação.");
         setIsIframeReady(true);
       }
       
-      // O sistema filho solicita que o pai inicie a autenticação do Google
       if (type === 'DRIVE_CONNECT_REQUEST') {
-        console.log("🔑 EcoFeira: Solicitação de autenticação recebida do DriverVault.");
-        if (tokenClientRef.current) {
+        console.log("🔑 EcoFeira: Solicitação de autenticação recebida.");
+        
+        // Estratégia de Autorização Simultânea:
+        // Verifica se o token já foi capturado durante o login do Firebase (armazenado em sessionStorage)
+        const sessionToken = sessionStorage.getItem('ecofeira_google_access_token');
+        
+        if (sessionToken) {
+          console.log("🚀 EcoFeira: Utilizando token pré-autorizado do login Firebase.");
+          sendTokenToChild(sessionToken);
+        } else if (tokenClientRef.current) {
+          // Fallback caso o login inicial não tenha gerado token (ex: sessão antiga)
+          console.log("🔄 EcoFeira: Iniciando popup de autorização adicional.");
           tokenClientRef.current.requestAccessToken();
         } else {
-          console.error("❌ EcoFeira: Token Client do Google não inicializado.");
+          console.error("❌ EcoFeira: Serviço de autenticação indisponível.");
           sendTokenToChild(null, "Serviço de autenticação indisponível no momento.");
         }
       }
       
-      // O sistema filho envia comando de restauração
       if (type === 'ECOFEIRA_RESTORE_DATA') {
         console.log("📥 EcoFeira: Restaurando dados recebidos do DriverVault.");
         restoreAppData(payload);
@@ -161,9 +165,9 @@ export const BackupView: React.FC<BackupViewProps> = ({ user }) => {
               </svg>
             </div>
             <div>
-              <h1 className="text-2xl sm:text-4xl font-black text-[#111827] dark:text-white tracking-tighter">Gerenciamento de Backup</h1>
+              <h1 className="text-2xl sm:text-4xl font-black text-[#111827] dark:text-white tracking-tighter">Backup Inteligente</h1>
               <p className="text-xs sm:text-sm font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest mt-1">
-                Autenticação segura via Google Drive API
+                Sincronização simultânea via Google Drive
               </p>
             </div>
           </div>
@@ -182,16 +186,9 @@ export const BackupView: React.FC<BackupViewProps> = ({ user }) => {
           {!isIframeReady && (
             <div className="absolute inset-0 bg-white/80 dark:bg-[#0f172a]/80 backdrop-blur-sm flex flex-col items-center justify-center space-y-4">
               <div className="w-12 h-12 border-4 border-brand/20 border-t-brand rounded-full animate-spin"></div>
-              <p className="text-sm font-black text-gray-400 uppercase tracking-widest">Iniciando DriverVault...</p>
+              <p className="text-sm font-black text-gray-400 uppercase tracking-widest">Aguardando DriverVault...</p>
             </div>
           )}
-          
-          <div className="absolute bottom-0 left-0 right-0 p-4 bg-white/80 dark:bg-[#1e293b]/80 backdrop-blur-md border-t border-gray-100 dark:border-gray-800 text-center">
-             <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest flex items-center justify-center">
-               <svg className="w-3 h-3 mr-2 text-brand" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M2.166 4.999A11.954 11.954 0 0010 1.944 11.954 11.954 0 0017.834 5c.11.65.166 1.32.166 2.001 0 4.908-3.333 9.277-8 10.364-4.667-1.087-8-5.456-8-10.364 0-.68.057-1.35.166-2.001zM9 11.242V6a1 1 0 112 0v5.242l2.121 2.122a1 1 0 11-1.414 1.414L9 11.242z" clipRule="evenodd" /></svg>
-               Segurança EcoFeira: Autenticação delegada ativa
-             </p>
-          </div>
         </div>
       </div>
     </div>

@@ -21,5 +21,6 @@ const googleProvider = new GoogleAuthProvider();
 googleProvider.addScope('https://www.googleapis.com/auth/drive.appdata');
 googleProvider.addScope('https://www.googleapis.com/auth/drive.file');
 
-export { auth, googleProvider, signInWithPopup, signOut, onAuthStateChanged };
+// Fixed: Added GoogleAuthProvider to the export list
+export { auth, googleProvider, signInWithPopup, signOut, onAuthStateChanged, GoogleAuthProvider };
 export type { User };
