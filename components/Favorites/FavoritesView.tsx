@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Product, Supermarket } from '../../types';
 import { ProductCard } from '../ProductCard';
@@ -51,10 +52,6 @@ export const FavoritesView: React.FC<FavoritesViewProps> = ({
   const handleClear = () => {
     const idsToClear = selectedIds.size > 0 ? Array.from(selectedIds) : null;
     onClearClick(activeTab, idsToClear);
-    // Reset selection after clearing specific items
-    if (idsToClear) {
-      setSelectedIds(new Set());
-    }
   };
 
   const hasItems = activeTab === 'products' ? favoritedProducts.length > 0 : favoritedStoresData.length > 0;
@@ -75,7 +72,7 @@ export const FavoritesView: React.FC<FavoritesViewProps> = ({
         {hasItems && (
           <ClearButton 
             onClick={handleClear} 
-            label={selectedIds.size > 0 ? `Limpar Selecionados (${selectedIds.size})` : (activeTab === 'products' ? "Limpar Produtos" : "Limpar Lojas")}
+            label={selectedIds.size > 0 ? `Remover Selecionados (${selectedIds.size})` : (activeTab === 'products' ? "Limpar Produtos" : "Limpar Lojas")}
           />
         )}
       </div>
@@ -101,14 +98,10 @@ export const FavoritesView: React.FC<FavoritesViewProps> = ({
           {favoritedProducts.length > 0 ? (
             <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-12 animate-in fade-in slide-in-from-bottom-4 duration-500">
               {favoritedProducts.map((p) => (
-                <div key={p.id} className="relative group/card">
-                  {/* Circular Selection Marker */}
+                <div key={p.id} className="relative">
                   <div 
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      toggleSelection(p.id);
-                    }}
-                    className={`absolute top-4 left-4 z-[40] w-8 h-8 rounded-full border-4 flex items-center justify-center transition-all cursor-pointer shadow-lg ${selectedIds.has(p.id) ? 'bg-brand border-white text-white scale-110' : 'bg-white/80 border-gray-200 text-transparent hover:border-brand/50 sm:opacity-0 sm:group-hover/card:opacity-100'}`}
+                    onClick={() => toggleSelection(p.id)}
+                    className={`absolute top-4 left-4 z-[40] w-8 h-8 rounded-full border-4 flex items-center justify-center transition-all cursor-pointer shadow-lg ${selectedIds.has(p.id) ? 'bg-brand border-white text-white scale-110' : 'bg-white/80 border-gray-200 text-transparent hover:border-brand/50'}`}
                   >
                     {selectedIds.has(p.id) && (
                       <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -144,14 +137,10 @@ export const FavoritesView: React.FC<FavoritesViewProps> = ({
           {favoritedStoresData.length > 0 ? (
             <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-12 animate-in fade-in slide-in-from-bottom-4 duration-500">
               {favoritedStoresData.map(store => (
-                <div key={store.id} className="relative group/store">
-                  {/* Circular Selection Marker */}
+                <div key={store.id} className="relative">
                   <div 
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      toggleSelection(store.id);
-                    }}
-                    className={`absolute top-6 left-6 z-[40] w-8 h-8 rounded-full border-4 flex items-center justify-center transition-all cursor-pointer shadow-lg ${selectedIds.has(store.id) ? 'bg-brand border-white text-white scale-110' : 'bg-white/80 border-gray-200 text-transparent hover:border-brand/50 sm:opacity-0 sm:group-hover/store:opacity-100'}`}
+                    onClick={() => toggleSelection(store.id)}
+                    className={`absolute top-6 left-6 z-[40] w-8 h-8 rounded-full border-4 flex items-center justify-center transition-all cursor-pointer shadow-lg ${selectedIds.has(store.id) ? 'bg-brand border-white text-white scale-110' : 'bg-white/80 border-gray-200 text-transparent hover:border-brand/50'}`}
                   >
                     {selectedIds.has(store.id) && (
                       <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
