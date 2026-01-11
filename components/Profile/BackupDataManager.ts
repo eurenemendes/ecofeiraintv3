@@ -1,4 +1,3 @@
-
 import { User } from '../../services/firebase';
 
 export interface BackupPayload {
