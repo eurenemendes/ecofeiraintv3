@@ -16,11 +16,9 @@ const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 
 const googleProvider = new GoogleAuthProvider();
-// Adiciona escopos para o Google Drive API
-// 'drive.appdata' é ideal para armazenar backups ocultos do app
+// Solicita acesso à pasta de dados do aplicativo (AppData) e arquivos criados pelo app
 googleProvider.addScope('https://www.googleapis.com/auth/drive.appdata');
 googleProvider.addScope('https://www.googleapis.com/auth/drive.file');
 
-// Fixed: Added GoogleAuthProvider to the export list
 export { auth, googleProvider, signInWithPopup, signOut, onAuthStateChanged, GoogleAuthProvider };
 export type { User };
