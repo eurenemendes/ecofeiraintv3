@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useEffect, useRef, useState, useCallback } from 'react';
@@ -31,6 +32,36 @@ export default function BackupPage() {
   const CHILD_APP_URL = 'https://drivervault.vercel.app/';
   const GOOGLE_CLIENT_ID = '349676062186-jsle32i8463qpad128u2g7grjtj4td33.apps.googleusercontent.com';
 
+  // Handler para resposta do Google OAuth com logs de auditoria
+  const handleTokenResponse = useCallback((response: any) => {
+    const iframe = iframeRef.current;
+    
+    console.group('🔍 EcoFeira [Audit]: Google Identity Response');
+    
+    if (iframe?.contentWindow) {
+      if (response && response.access_token) {
+        console.log('✅ Token obtido. Preparando envio via postMessage...');
+        console.log('Payload:', { type: 'DRIVE_TOKEN_RESPONSE', token: response.access_token.substring(0, 10) + "..." });
+        
+        iframe.contentWindow.postMessage({
+          type: 'DRIVE_TOKEN_RESPONSE',
+          token: response.access_token,
+        }, CHILD_APP_URL);
+        
+        console.log('🚀 Mensagem postada para:', CHILD_APP_URL);
+      } else {
+        console.error('❌ Erro: Token inválido na resposta.', response);
+        iframe.contentWindow.postMessage({
+          type: 'DRIVE_TOKEN_ERROR',
+          error: 'Não foi possível autorizar o acesso ao Google Drive.',
+        }, CHILD_APP_URL);
+      }
+    } else {
+      console.warn('⚠️ Erro: Iframe indisponível para postMessage.');
+    }
+    console.groupEnd();
+  }, []);
+
   // Monitora o estado de autenticação do Firebase
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
@@ -38,26 +69,6 @@ export default function BackupPage() {
       setAuthLoading(false);
     });
     return () => unsubscribe();
-  }, []);
-
-  // Handler para resposta do Google OAuth
-  const handleTokenResponse = useCallback((response: any) => {
-    const iframe = iframeRef.current;
-    if (iframe?.contentWindow) {
-      if (response && response.access_token) {
-        console.log('EcoFeira: Token de acesso obtido, sincronizando com DriverVault...');
-        iframe.contentWindow.postMessage({
-          type: 'DRIVE_TOKEN_RESPONSE',
-          token: response.access_token,
-        }, CHILD_APP_URL);
-      } else {
-        console.error('EcoFeira: Erro na autenticação proativa.');
-        iframe.contentWindow.postMessage({
-          type: 'DRIVE_TOKEN_ERROR',
-          error: 'Não foi possível autorizar o acesso ao Google Drive.',
-        }, CHILD_APP_URL);
-      }
-    }
   }, []);
 
   // Inicialização do Google Identity Services (GSI)
@@ -69,6 +80,7 @@ export default function BackupPage() {
     script.onload = () => {
       // @ts-ignore
       if (window.google) {
+        console.log('📦 EcoFeira [Audit]: Script GSI carregado. Configurando initTokenClient.');
         // @ts-ignore
         tokenClientRef.current = window.google.accounts.oauth2.initTokenClient({
           client_id: GOOGLE_CLIENT_ID,
@@ -78,6 +90,7 @@ export default function BackupPage() {
         
         // Se o iframe sinalizou prontidão antes do script carregar
         if (isIframeReady && user) {
+            console.log('⚡ EcoFeira [Audit]: Acionando solicitação automática de token.');
             tokenClientRef.current.requestAccessToken();
         }
       }
@@ -86,7 +99,7 @@ export default function BackupPage() {
     return () => { if (document.body.contains(script)) document.body.removeChild(script); };
   }, [handleTokenResponse, isIframeReady, user]);
 
-  // Gerenciamento de mensagens do iframe (Critério 2.1)
+  // Gerenciamento de mensagens do iframe
   useEffect(() => {
     const handleMessage = (event: MessageEvent) => {
       const allowedOrigins = [
@@ -98,17 +111,16 @@ export default function BackupPage() {
       if (!allowedOrigins.includes(event.origin)) return;
 
       const { type, payload } = event.data;
+      console.log(`📩 EcoFeira [Audit]: Mensagem recebida de ${event.origin}: ${type}`);
 
       if (type === 'ECOFEIRA_BACKUP_READY') {
-        console.log('EcoFeira: Canal de backup estabelecido.');
         setIsIframeReady(true);
-        
-        // Inicia fluxo proativo (Critério 1.1)
         if (tokenClientRef.current && user) {
+            console.log('🔑 EcoFeira [Audit]: Iniciando fluxo proativo após sinalização do filho.');
             tokenClientRef.current.requestAccessToken();
         }
       } else if (type === 'ECOFEIRA_RESTORE_DATA') {
-        console.log('EcoFeira: Recebendo dados para restauração...');
+        console.log('📥 EcoFeira [Audit]: Restaurando dados...');
         restoreAppData(payload);
       }
     };
@@ -117,10 +129,10 @@ export default function BackupPage() {
     return () => window.removeEventListener('message', handleMessage);
   }, [user]);
 
-  // Disparo automático de dados reais ao DriverVault (Critério 3.2)
+  // Disparo automático de dados reais ao DriverVault
   useEffect(() => {
     if (isIframeReady && iframeRef.current?.contentWindow && user) {
-      console.log('EcoFeira: Enviando payload de dados reais para sincronização.');
+      console.log('📤 EcoFeira [Audit]: Sincronizando dados reais do usuário com DriverVault.');
       const realDataPayload = getBackupPayload(user);
       iframeRef.current.contentWindow.postMessage(realDataPayload, CHILD_APP_URL);
     }
@@ -157,7 +169,7 @@ export default function BackupPage() {
         <CardHeader>
           <CardTitle>Backup Inteligente</CardTitle>
           <CardDescription>
-            Sincronização automática em tempo real com seu Google Drive.
+            Auditando fluxo de sincronização com Google Drive.
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -172,28 +184,12 @@ export default function BackupPage() {
             {!isIframeReady && (
               <div className="absolute inset-0 flex flex-col items-center justify-center bg-white/90 dark:bg-[#0f172a]/90 backdrop-blur-sm space-y-4">
                 <div className="w-12 h-12 border-4 border-brand/20 border-t-brand rounded-full animate-spin"></div>
-                <p className="text-sm font-black text-gray-400 uppercase tracking-widest animate-pulse">Conectando ao DriverVault...</p>
+                <p className="text-sm font-black text-gray-400 uppercase tracking-widest animate-pulse">Estabelecendo Conexão Segura...</p>
               </div>
             )}
           </div>
         </CardContent>
       </Card>
-      
-      <div className="mt-8 p-6 bg-emerald-50 dark:bg-emerald-500/10 rounded-[2rem] border border-emerald-100 dark:border-emerald-900/30">
-        <div className="flex items-start space-x-4">
-          <div className="p-3 bg-brand text-white rounded-xl shadow-lg">
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
-            </svg>
-          </div>
-          <div>
-            <h4 className="text-emerald-900 dark:text-emerald-100 font-black tracking-tight uppercase text-xs">Proteção de Dados Ativa</h4>
-            <p className="text-emerald-700/80 dark:text-emerald-400/80 text-sm font-medium mt-1">
-              Seus favoritos e listas de compras são salvos automaticamente em uma pasta privada no seu Google Drive, acessível apenas por você através deste app.
-            </p>
-          </div>
-        </div>
-      </div>
     </div>
   );
 }

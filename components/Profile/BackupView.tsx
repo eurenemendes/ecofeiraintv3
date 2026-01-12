@@ -28,25 +28,35 @@ export const BackupView: React.FC<BackupViewProps> = ({ user }) => {
 
   // Função para enviar resposta do token de volta para o iframe filho
   const sendTokenToChild = useCallback((token: string | null, error?: string) => {
-    if (iframeRef.current?.contentWindow) {
+    const iframe = iframeRef.current;
+    if (iframe?.contentWindow) {
       if (token) {
-        console.log("📤 EcoFeira: Enviando token de acesso para o DriverVault.");
-        iframeRef.current.contentWindow.postMessage({
+        console.group("🔑 EcoFeira [DEBUG]: Envio de Token para Iframe");
+        console.log("Destino:", BACKUP_SYSTEM_URL);
+        console.log("Token (parcial):", token.substring(0, 15) + "...");
+        
+        iframe.contentWindow.postMessage({
           type: 'DRIVE_TOKEN_RESPONSE',
           token: token
         }, BACKUP_SYSTEM_URL);
+        
+        console.log("✅ postMessage DRIVE_TOKEN_RESPONSE disparado com sucesso.");
+        console.groupEnd();
       } else {
-        console.error("❌ EcoFeira: Erro na autenticação ou token vazio.");
-        iframeRef.current.contentWindow.postMessage({
+        console.error("❌ EcoFeira [DEBUG]: Erro na autenticação ou token vazio.", error);
+        iframe.contentWindow.postMessage({
           type: 'DRIVE_TOKEN_ERROR',
           error: error || 'Falha na autenticação do Google Drive.'
         }, BACKUP_SYSTEM_URL);
       }
+    } else {
+      console.warn("⚠️ EcoFeira [DEBUG]: Impossível enviar token - Iframe contentWindow não disponível.");
     }
   }, [BACKUP_SYSTEM_URL]);
 
   // Callback executado quando o Google retorna o token manualmente
   const handleTokenResponse = useCallback((response: any) => {
+    console.log("📡 EcoFeira [DEBUG]: Resposta recebida do Google Identity Services.", response);
     if (response && response.access_token) {
       sendTokenToChild(response.access_token);
     } else {
@@ -62,6 +72,7 @@ export const BackupView: React.FC<BackupViewProps> = ({ user }) => {
     script.defer = true;
     script.onload = () => {
       if (window.google) {
+        console.log("📦 EcoFeira [DEBUG]: Script GSI carregado. Inicializando initTokenClient.");
         tokenClientRef.current = window.google.accounts.oauth2.initTokenClient({
           client_id: GOOGLE_CLIENT_ID,
           scope: 'https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/drive.appdata',
@@ -93,34 +104,32 @@ export const BackupView: React.FC<BackupViewProps> = ({ user }) => {
       }
 
       const { type, payload } = event.data;
+      console.log(`📩 EcoFeira [DEBUG]: Mensagem recebida do DriverVault: ${type}`, payload || "");
 
       if (type === 'ECOFEIRA_BACKUP_READY') {
-        console.log("✅ EcoFeira: DriverVault pronto para operação.");
+        console.log("✅ EcoFeira [DEBUG]: DriverVault pronto. Iniciando fluxo de autorização proativo.");
         setIsIframeReady(true);
+        
+        // Estratégia de Autorização Simultânea:
+        const sessionToken = sessionStorage.getItem('ecofeira_google_access_token');
+        if (sessionToken) {
+          console.log("🚀 EcoFeira [DEBUG]: Utilizando token pré-autorizado do login Firebase.");
+          sendTokenToChild(sessionToken);
+        } else if (tokenClientRef.current) {
+          console.log("🔄 EcoFeira [DEBUG]: Token não encontrado em sessão. Solicitando via GSI Popup...");
+          tokenClientRef.current.requestAccessToken();
+        }
       }
       
       if (type === 'DRIVE_CONNECT_REQUEST') {
-        console.log("🔑 EcoFeira: Solicitação de autenticação recebida.");
-        
-        // Estratégia de Autorização Simultânea:
-        // Verifica se o token já foi capturado durante o login do Firebase (armazenado em sessionStorage)
-        const sessionToken = sessionStorage.getItem('ecofeira_google_access_token');
-        
-        if (sessionToken) {
-          console.log("🚀 EcoFeira: Utilizando token pré-autorizado do login Firebase.");
-          sendTokenToChild(sessionToken);
-        } else if (tokenClientRef.current) {
-          // Fallback caso o login inicial não tenha gerado token (ex: sessão antiga)
-          console.log("🔄 EcoFeira: Iniciando popup de autorização adicional.");
+        console.log("🔑 EcoFeira [DEBUG]: Solicitação manual de conexão vinda do DriverVault.");
+        if (tokenClientRef.current) {
           tokenClientRef.current.requestAccessToken();
-        } else {
-          console.error("❌ EcoFeira: Serviço de autenticação indisponível.");
-          sendTokenToChild(null, "Serviço de autenticação indisponível no momento.");
         }
       }
       
       if (type === 'ECOFEIRA_RESTORE_DATA') {
-        console.log("📥 EcoFeira: Restaurando dados recebidos do DriverVault.");
+        console.log("📥 EcoFeira [DEBUG]: Dados de restauração recebidos. Processando...");
         restoreAppData(payload);
       }
     };
@@ -135,8 +144,14 @@ export const BackupView: React.FC<BackupViewProps> = ({ user }) => {
   // Envia dados de inicialização (contexto do usuário)
   useEffect(() => {
     if (isIframeReady && iframeRef.current?.contentWindow && user) {
+      console.group("📤 EcoFeira [DEBUG]: Sincronização de Dados Reais");
       const backupData = getBackupPayload(user);
+      console.log("Payload Gerado:", backupData);
+      
       iframeRef.current.contentWindow.postMessage(backupData, BACKUP_SYSTEM_URL);
+      
+      console.log("✅ postMessage ECOFEIRA_BACKUP_INIT disparado com sucesso.");
+      console.groupEnd();
     }
   }, [isIframeReady, user]);
 
@@ -167,7 +182,7 @@ export const BackupView: React.FC<BackupViewProps> = ({ user }) => {
             <div>
               <h1 className="text-2xl sm:text-4xl font-black text-[#111827] dark:text-white tracking-tighter">Backup Inteligente</h1>
               <p className="text-xs sm:text-sm font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest mt-1">
-                Sincronização simultânea via Google Drive
+                Monitoramento de logs de depuração ativado
               </p>
             </div>
           </div>

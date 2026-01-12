@@ -24,7 +24,7 @@ export interface BackupPayload {
  * para serem enviados ao sistema de backup.
  */
 export const getBackupPayload = (user: User): BackupPayload => {
-  return {
+  const payload: BackupPayload = {
     type: 'ECOFEIRA_BACKUP_INIT',
     user: {
       uid: user.uid,
@@ -41,6 +41,9 @@ export const getBackupPayload = (user: User): BackupPayload => {
       recentSearches: JSON.parse(localStorage.getItem('ecofeira_recent_searches') || '[]'),
     }
   };
+
+  console.log("🛠️ EcoFeira [Audit]: Payload de backup gerado a partir do localStorage.", payload.data);
+  return payload;
 };
 
 /**
@@ -48,33 +51,47 @@ export const getBackupPayload = (user: User): BackupPayload => {
  * do site pai.
  */
 export const restoreAppData = (payload: any) => {
-  if (!payload || typeof payload !== 'object') return;
+  if (!payload || typeof payload !== 'object') {
+    console.error("❌ EcoFeira [Audit]: Payload de restauração inválido ou vazio.");
+    return;
+  }
 
   const { favorites, favoriteStores, shoppingList, scannedHistory, recentSearches } = payload;
 
+  console.group("📥 EcoFeira [Audit]: Restaurando Dados da Nuvem");
+  
   if (Array.isArray(favorites)) {
     localStorage.setItem('ecofeira_favorites', JSON.stringify(favorites));
+    console.log("- Favoritos restaurados");
   }
 
   if (Array.isArray(favoriteStores)) {
     localStorage.setItem('ecofeira_favorite_stores', JSON.stringify(favoriteStores));
+    console.log("- Lojas favoritas restauradas");
   }
   
   if (Array.isArray(shoppingList)) {
     localStorage.setItem('ecofeira_shopping_list', JSON.stringify(shoppingList));
+    console.log("- Lista de compras restaurada");
   }
   
   if (Array.isArray(scannedHistory)) {
     localStorage.setItem('ecofeira_scanned_history', JSON.stringify(scannedHistory));
+    console.log("- Histórico de scan restaurado");
   }
   
   if (Array.isArray(recentSearches)) {
     localStorage.setItem('ecofeira_recent_searches', JSON.stringify(recentSearches));
+    console.log("- Pesquisas recentes restauradas");
   }
 
+  console.groupEnd();
+
   // Notifica o sistema de que os dados foram aplicados com sucesso
-  console.log("✅ EcoFeira: Dados restaurados com sucesso do backup.");
+  console.log("✅ EcoFeira [Audit]: Dados aplicados com sucesso. Recarregando página para sincronizar UI...");
   
   // Recarrega a aplicação para que o estado do React seja atualizado com os novos dados do localStorage
-  window.location.reload();
+  setTimeout(() => {
+    window.location.reload();
+  }, 1000);
 };
