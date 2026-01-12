@@ -2,7 +2,7 @@
 
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 
-// Componentes de UI internos baseados em Tailwind para garantir funcionamento imediato sem dependências externas
+// Componentes de UI internos baseados em Tailwind para garantir funcionamento imediato
 const Card = ({ children, className = "" }: { children: React.ReactNode, className?: string }) => (
   <div className={`bg-white dark:bg-[#1e293b] rounded-[2.5rem] border border-gray-100 dark:border-gray-800 shadow-2xl overflow-hidden ${className}`}>{children}</div>
 );
@@ -46,13 +46,13 @@ export default function BackupPage() {
     const iframe = iframeRef.current;
     if (iframe?.contentWindow) {
       if (response && response.access_token) {
-        console.log('Token de acesso obtido, enviando para o filho...');
+        console.log('EcoFeira: Token de acesso obtido, enviando para o módulo de backup...');
         iframe.contentWindow.postMessage({
           type: 'DRIVE_TOKEN_RESPONSE',
           token: response.access_token,
         }, CHILD_APP_URL);
       } else {
-        console.error('Falha ao obter token de acesso.');
+        console.error('EcoFeira: Falha ao obter token de acesso.');
         iframe.contentWindow.postMessage({
           type: 'DRIVE_TOKEN_ERROR',
           error: 'Falha na autenticação do Google Drive.',
@@ -61,23 +61,25 @@ export default function BackupPage() {
     }
   }, []);
 
-  // Efeito para carregar e inicializar o Google Identity Services
+  // Efeito para carregar e inicializar o Google Identity Services (GSI)
   useEffect(() => {
     const script = document.createElement('script');
     script.src = 'https://accounts.google.com/gsi/client';
     script.async = true;
     script.defer = true;
     script.onload = () => {
+      // @ts-ignore
       if (window.google) {
+        // @ts-ignore
         tokenClientRef.current = window.google.accounts.oauth2.initTokenClient({
           client_id: GOOGLE_CLIENT_ID,
           scope: 'https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/drive.appdata',
           callback: handleTokenResponse,
         });
         
-        // Se o iframe já estiver pronto quando o GSI carregar, inicia a autenticação.
+        // Se o iframe já estiver pronto quando o GSI carregar, inicia a autenticação proativamente
         if (isIframeReady) {
-            console.log('GSI carregado e iframe pronto, solicitando token...');
+            console.log('EcoFeira: GSI carregado e iframe pronto, solicitando token...');
             tokenClientRef.current.requestAccessToken();
         }
       }
@@ -94,23 +96,29 @@ export default function BackupPage() {
   // Efeito para gerenciar a comunicação com o iframe
   useEffect(() => {
     const handleMessage = (event: MessageEvent) => {
-      if (!['https://drivervault.vercel.app', 'https://copyecofeira.vercel.app', 'https://ecofeiraintv3.vercel.app'].includes(event.origin)) {
+      const allowedOrigins = [
+        'https://drivervault.vercel.app', 
+        'https://copyecofeira.vercel.app', 
+        'https://ecofeiraintv3.vercel.app'
+      ];
+
+      if (!allowedOrigins.includes(event.origin)) {
         return;
       }
 
       const { type, payload } = event.data;
 
       if (type === 'ECOFEIRA_BACKUP_READY') {
-        console.log('Site filho de backup está pronto.');
+        console.log('EcoFeira: Site filho de backup está pronto.');
         setIsIframeReady(true);
-        // Se o GSI client já foi inicializado, pede o token.
+        // Se o GSI client já foi inicializado, pede o token proativamente
         if (tokenClientRef.current) {
-            console.log('Filho pronto e GSI já carregado, solicitando token...');
+            console.log('EcoFeira: Filho pronto e GSI já carregado, iniciando fluxo de autorização...');
             tokenClientRef.current.requestAccessToken();
         }
       } else if (type === 'ECOFEIRA_RESTORE_DATA') {
-        console.log('Dados de restauração recebidos:', payload);
-        alert('Dados restaurados com sucesso! Verifique o console.');
+        console.log('EcoFeira: Dados de restauração recebidos:', payload);
+        alert('Dados restaurados com sucesso! Verifique o console para detalhes.');
       }
     };
 
@@ -124,7 +132,7 @@ export default function BackupPage() {
   // Efeito para enviar os dados iniciais assim que o filho estiver pronto
   useEffect(() => {
     if (isIframeReady && iframeRef.current?.contentWindow) {
-      console.log('Enviando dados de inicialização para o site filho...');
+      console.log('EcoFeira: Enviando dados de inicialização (MOCK) para o site filho...');
       iframeRef.current.contentWindow.postMessage({
         type: 'ECOFEIRA_BACKUP_INIT',
         user: mockUser,
@@ -139,7 +147,7 @@ export default function BackupPage() {
         <CardHeader>
           <CardTitle>Gerenciamento de Backup</CardTitle>
           <CardDescription>
-            A sincronização com o Google Drive está sendo iniciada automaticamente para sua conta EcoFeira.
+            Sincronização automática iniciada com o Google Drive para sua conta EcoFeira.
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -154,12 +162,28 @@ export default function BackupPage() {
             {!isIframeReady && (
               <div className="absolute inset-0 flex flex-col items-center justify-center bg-white/90 dark:bg-[#0f172a]/90 backdrop-blur-sm space-y-4">
                 <div className="w-12 h-12 border-4 border-brand/20 border-t-brand rounded-full animate-spin"></div>
-                <p className="text-sm font-black text-gray-400 uppercase tracking-widest">Iniciando Sincronização...</p>
+                <p className="text-sm font-black text-gray-400 uppercase tracking-widest">Iniciando Sincronização Segura...</p>
               </div>
             )}
           </div>
         </CardContent>
       </Card>
+      
+      <div className="mt-8 p-6 bg-blue-50 dark:bg-blue-500/10 rounded-[2rem] border border-blue-100 dark:border-blue-900/30">
+        <div className="flex items-start space-x-4">
+          <div className="p-3 bg-blue-500 text-white rounded-xl shadow-lg">
+            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+          </div>
+          <div>
+            <h4 className="text-blue-900 dark:text-blue-100 font-black tracking-tight">Login Único Ativado</h4>
+            <p className="text-blue-700/80 dark:text-blue-300/80 text-sm font-medium mt-1">
+              Suas permissões do Google Drive são solicitadas apenas uma vez para garantir que sua lista de compras e favoritos estejam sempre protegidos na nuvem.
+            </p>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
