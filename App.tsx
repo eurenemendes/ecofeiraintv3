@@ -782,7 +782,7 @@ const App: React.FC = () => {
                     </div>
                   </div>
                   {showSearchSuggestions && searchSuggestions.length > 0 && (
-                    <div className="absolute top-full left-0 right-0 mt-4 bg-white/95 dark:bg-[#1e293b]/95 backdrop-blur-md rounded-2xl shadow-2xl border border-gray-100 dark:border-gray-800 overflow-hidden z-[200]">
+                    <div className="absolute top-full left-0 right-0 mt-4 bg-white/95 dark:bg-[#1e293b]/95 backdrop-blur-md rounded-2xl sm:rounded-[2.5rem] shadow-2xl border border-gray-100 dark:border-gray-800 overflow-hidden z-[200]">
                       <div className="animate-in fade-in duration-300">
                         {searchSuggestions.map((s, idx) => (
                           <button key={idx} onClick={() => handleSearchSubmit(s.label)} className="w-full flex items-center justify-between p-4 sm:p-6 hover:bg-brand/5 border-b border-gray-50 dark:border-gray-800/50 last:border-none group text-left text-gray-700 dark:text-gray-200">
