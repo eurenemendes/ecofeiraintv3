@@ -23,7 +23,7 @@
             colors: {
               brand: {
                 DEFAULT: '#FF6600', // Laranja da paleta
-                dark: '#D95700',    // Laranja escuro para hover
+                dark: '#CC5200',    // Laranja mais denso para interações
               }
             },
             borderRadius: {
@@ -66,22 +66,15 @@
       /* Proteção de Imagens */
       img {
         -webkit-user-drag: none;
-        -khtml-user-drag: none;
-        -moz-user-drag: none;
-        -o-user-drag: none;
         user-drag: none;
         user-select: none;
         -webkit-user-select: none;
       }
 
-      /* Personalização da Seleção de Texto com a nova cor */
+      /* Personalização da Seleção de Texto */
       ::selection {
         background-color: #FF6600;
-        color: white;
-      }
-      ::-moz-selection {
-        background-color: #FF6600;
-        color: white;
+        color: #FFFFFF;
       }
 
       .custom-scrollbar::-webkit-scrollbar {
@@ -91,11 +84,8 @@
         background: transparent;
       }
       .custom-scrollbar::-webkit-scrollbar-thumb {
-        background: #e2e8f0;
+        background: #FF6600;
         border-radius: 10px;
-      }
-      .dark .custom-scrollbar::-webkit-scrollbar-thumb {
-        background: #1e293b;
       }
       
       .no-scrollbar::-webkit-scrollbar {
@@ -126,23 +116,7 @@
 </head>
   <body class="bg-[#FFFFFF] dark:bg-[#000000] text-gray-900 dark:text-gray-100 transition-colors duration-300 overflow-x-hidden">
     <div id="root"></div>
-    <!-- Script principal como módulo ES -->
     <script type="module" src="./index.tsx"></script>
-    
-    <!-- Registro do Service Worker -->
-    <script>
-      if ('serviceWorker' in navigator) {
-        window.addEventListener('load', () => {
-          navigator.serviceWorker.register('./sw.js')
-            .then(reg => console.log('SW registrado com sucesso!', reg.scope))
-            .catch(err => {
-              console.warn('Registro do Service Worker ignorado ou indisponível:', err.message);
-            });
-        });
-      }
-    </script>
-
-    <!-- ✨ Click anywhere ✨ for ✨ spark ✨ effect ✨ -->
     <script src="https://app.embed.im/spark.js" defer></script>
   </body>
 </html>
