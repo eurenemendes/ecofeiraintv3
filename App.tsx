@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect, useMemo, useRef } from 'react';
+import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { Routes, Route, useNavigate, useParams, useLocation, Navigate, Link } from 'react-router-dom';
 import { Product, Supermarket, MainBanner, GridBanner, ShoppingListItem } from './types.ts';
 import { getProducts, getSupermarkets, getMainBanners, getGridBanners, getPopularSuggestions } from './services/googleSheetsService.ts';
@@ -21,8 +21,10 @@ import { SearchInput } from './components/ui/SearchInput.tsx';
 import { ShoppingListView } from './components/ShoppingList/ShoppingListView.tsx';
 import { StoreMarquee } from './components/StoreMarquee.tsx';
 import { auth, googleProvider, signInWithPopup, signOut, onAuthStateChanged, User, GoogleAuthProvider } from './services/firebase.ts';
+import { googleDriveService } from './services/googleDriveService.ts';
 
 const ITEMS_PER_PAGE = 30;
+const SYNC_THROTTLE_MS = 20000; // 20 segundos
 
 const normalizeString = (str: string) => 
   str.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
@@ -274,11 +276,8 @@ const StoreDetailView = ({ products, stores, searchQuery, setSearchQuery, select
   const currentStore = stores.find(s => s.id === storeId);
   const [isShared, setIsShared] = useState(false);
   
-  // Filtra produtos especificamente para este supermercado ignorando filtros globais que possam causar conflito (como filtro de OUTRO supermercado)
   const storeDetailProducts = useMemo(() => {
     if (!currentStore) return [];
-    
-    // Normalização rigorosa para evitar falhas de espaços ou casing na planilha
     const targetStoreName = normalizeString(currentStore.name);
     let result = products.filter(p => normalizeString(p.supermarket) === targetStoreName);
     
@@ -358,7 +357,6 @@ const StoreDetailView = ({ products, stores, searchQuery, setSearchQuery, select
                 <div className="relative h-full flex items-center bg-white dark:bg-zinc-900 rounded-xl sm:rounded-[2.5rem] border border-gray-100 dark:border-zinc-700 shadow-sm transition-all focus-within:ring-4 focus-within:ring-brand/10">
                   <SearchInput 
                     value={searchQuery}
-                    // Explicitly type val to avoid 'unknown' error in certain environments
                     onChange={(val: string) => {setSearchQuery(val); setShowSearchSuggestions(true);}}
                     onFocus={() => setShowSearchSuggestions(true)}
                     placeholder="Buscar ofertas nesta unidade..."
@@ -503,6 +501,11 @@ const App: React.FC = () => {
   const [isClearListModalOpen, setIsClearListModalOpen] = useState(false);
   const [clearFavoritesContext, setClearFavoritesContext] = useState<{type: 'products' | 'stores', ids: string[] | null}>({type: 'products', ids: null});
 
+  // Referências para controle de Sincronização automática
+  const syncTimeoutRef = useRef<number | null>(null);
+  const lastSavedHashRef = useRef<string>("");
+  const isSyncInitialLoadDone = useRef<boolean>(false);
+
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => { setUser(currentUser); setAuthLoading(false); });
     return () => unsubscribe();
@@ -514,22 +517,95 @@ const App: React.FC = () => {
       try {
         const [p, s, mb, gb, suggs] = await Promise.all([getProducts(), getSupermarkets(), getMainBanners(), getGridBanners(), getPopularSuggestions()]);
         setProducts(p || []); setStores(s || []); setMainBanners(mb || []); setGridBanners(gb || []); setPopularSuggestions(suggs || []);
+        
+        // Carrega local inicial
         setFavorites(JSON.parse(localStorage.getItem('ecofeira_favorites') || '[]') as string[]);
+        setFavoriteStores(JSON.parse(localStorage.getItem('ecofeira_favorite_stores') || '[]') as string[]);
         setShoppingList(JSON.parse(localStorage.getItem('ecofeira_shopping_list') || '[]') as ShoppingListItem[]);
+        setRecentSearches(JSON.parse(localStorage.getItem('ecofeira_recent_searches') || '[]') as string[]);
+        setScannedHistory(JSON.parse(localStorage.getItem('ecofeira_scanned_history') || '[]') as string[]);
       } catch (e) {}
       setLoading(false);
     };
     loadData();
   }, []);
 
-  // Login com ajuste unificado para o Google Drive
+  // Sincronização inicial do Drive ao Logar
+  useEffect(() => {
+    if (user && !isSyncInitialLoadDone.current) {
+        const syncFromCloud = async () => {
+            const token = sessionStorage.getItem('ecofeira_google_access_token');
+            if (!token) return;
+            try {
+                const file = await googleDriveService.findBackupFile(token);
+                if (file) {
+                    const cloudData = await googleDriveService.downloadBackup(token, file.id);
+                    if (cloudData) {
+                        // Atualiza estados se os dados existirem na nuvem
+                        if (cloudData.favorites) setFavorites(cloudData.favorites);
+                        if (cloudData.favoriteStores) setFavoriteStores(cloudData.favoriteStores);
+                        if (cloudData.shoppingList) setShoppingList(cloudData.shoppingList);
+                        if (cloudData.recentSearches) setRecentSearches(cloudData.recentSearches);
+                        if (cloudData.scannedHistory) setScannedHistory(cloudData.scannedHistory);
+                        
+                        // Atualiza hash para evitar re-save imediato
+                        lastSavedHashRef.current = JSON.stringify(cloudData);
+                        console.log("☁️ EcoFeira: Dados sincronizados da nuvem com sucesso.");
+                    }
+                }
+                isSyncInitialLoadDone.current = true;
+            } catch (err) {
+                console.warn("⚠️ EcoFeira: Falha na sincronização inicial com a nuvem.");
+            }
+        };
+        syncFromCloud();
+    }
+  }, [user]);
+
+  // Lógica de Auto-Backup com Throttling de 20 segundos
+  useEffect(() => {
+    if (!user || loading || !isSyncInitialLoadDone.current) return;
+
+    const currentData = {
+        favorites,
+        favoriteStores,
+        shoppingList,
+        scannedHistory,
+        recentSearches
+    };
+
+    const currentHash = JSON.stringify(currentData);
+
+    // Só agenda se houver mudança real
+    if (currentHash !== lastSavedHashRef.current) {
+        if (syncTimeoutRef.current) window.clearTimeout(syncTimeoutRef.current);
+
+        syncTimeoutRef.current = window.setTimeout(async () => {
+            const token = sessionStorage.getItem('ecofeira_google_access_token');
+            if (!token) return;
+
+            try {
+                await googleDriveService.saveBackup(token, currentData);
+                lastSavedHashRef.current = currentHash;
+                console.log("☁️ EcoFeira: Backup automático realizado.");
+            } catch (err) {
+                console.error("❌ EcoFeira: Erro no auto-backup:", err);
+            }
+        }, SYNC_THROTTLE_MS);
+    }
+
+    return () => {
+        if (syncTimeoutRef.current) window.clearTimeout(syncTimeoutRef.current);
+    };
+  }, [favorites, favoriteStores, shoppingList, scannedHistory, recentSearches, user, loading]);
+
   const handleLogin = async () => { 
     try { 
       const result = await signInWithPopup(auth, googleProvider); 
       const credential = GoogleAuthProvider.credentialFromResult(result);
       if (credential?.accessToken) {
         sessionStorage.setItem('ecofeira_google_access_token', credential.accessToken);
-        console.log("🔑 EcoFeira: Token capturado no login para uso simultâneo.");
+        console.log("🔑 EcoFeira: Token capturado no login.");
       }
     } catch (error) {
       console.error("Erro no login:", error);
@@ -551,6 +627,7 @@ const App: React.FC = () => {
       setShoppingList([]);
       setRecentSearches([]);
       setScannedHistory([]);
+      isSyncInitialLoadDone.current = false;
       
       navigate('/'); 
     } catch (error) {
@@ -561,8 +638,8 @@ const App: React.FC = () => {
   useEffect(() => { if (!loading) localStorage.setItem('ecofeira_favorites', JSON.stringify(favorites)); }, [favorites, loading]);
   useEffect(() => { if (!loading) localStorage.setItem('ecofeira_favorite_stores', JSON.stringify(favoriteStores)); }, [favoriteStores, loading]);
   useEffect(() => { if (!loading) localStorage.setItem('ecofeira_shopping_list', JSON.stringify(shoppingList)); }, [shoppingList, loading]);
-  useEffect(() => localStorage.setItem('ecofeira_recent_searches', JSON.stringify(recentSearches)), [recentSearches]);
-  useEffect(() => localStorage.setItem('ecofeira_scanned_history', JSON.stringify(scannedHistory)), [scannedHistory]);
+  useEffect(() => { if (!loading) localStorage.setItem('ecofeira_recent_searches', JSON.stringify(recentSearches)); }, [recentSearches, loading]);
+  useEffect(() => { if (!loading) localStorage.setItem('ecofeira_scanned_history', JSON.stringify(scannedHistory)); }, [scannedHistory, loading]);
 
   useEffect(() => {
     if (!loading && (location.pathname === '/produtos' || location.pathname.startsWith('/supermercado/'))) {
@@ -571,10 +648,8 @@ const App: React.FC = () => {
     }
   }, [loading, location.pathname]);
 
-  // Ao trocar de rota, resetamos os filtros para evitar que um filtro de uma página deixe a outra vazia
   useEffect(() => { 
     setCurrentPage(1); 
-    // Se mudamos para uma rota de supermercado específica, limpamos o filtro de "Supermercado Selecionado" do feed geral
     if (location.pathname.startsWith('/supermercado/')) {
         setSelectedSupermarket('Todos');
     }
@@ -646,17 +721,20 @@ const App: React.FC = () => {
     return result;
   }, [products, searchQuery, selectedCategory, selectedSupermarket, sortBy, onlyPromos]);
 
+  // Fix: Explicitly cast Array.from to string[] to avoid 'unknown' type errors when passing elements to normalizeString
   const searchSuggestions = useMemo(() => {
     if (!searchQuery || searchQuery.length < 2) return [];
     const q = normalizeString(searchQuery);
     const names = products.filter(p => normalizeString(p.name).includes(q)).map(p => ({ label: p.name, type: 'produto' }));
-    const cats = Array.from(new Set(products.map(p => p.category))).filter(c => normalizeString(c).includes(q)).map(c => ({ label: c, type: 'categoria' }));
+    const cats = (Array.from(new Set(products.map(p => p.category))) as string[]).filter(c => normalizeString(c).includes(q)).map(c => ({ label: c, type: 'categoria' }));
     return [...cats, ...names].slice(0, 8);
   }, [products, searchQuery]);
 
   const favoritedProducts = useMemo(() => products.filter(p => favorites.includes(p.id)), [products, favorites]);
-  const categories = useMemo(() => ['Todas', ...Array.from(new Set(products.map(p => p.category)))], [products]);
-  const supermarketNames = useMemo(() => ['Todos', ...Array.from(new Set(products.map(p => p.supermarket)))], [products]);
+  // Fix: Explicitly cast categories to string[] to avoid potential 'unknown' inferences from Set conversions
+  const categories = useMemo(() => ['Todas', ...(Array.from(new Set(products.map(p => p.category))) as string[])], [products]);
+  // Fix: Explicitly cast supermarketNames to string[] to avoid potential 'unknown' inferences from Set conversions
+  const supermarketNames = useMemo(() => ['Todos', ...(Array.from(new Set(products.map(p => p.supermarket))) as string[])], [products]);
   const openStoreDetail = (store: Supermarket) => { setSelectedCategory('Todas'); setSearchQuery(''); setSortBy('none'); setCurrentPage(1); navigate(`/supermercado/${store.id}`); window.scrollTo({ top: 0, behavior: 'smooth' }); };
 
   const stats = useMemo(() => {
