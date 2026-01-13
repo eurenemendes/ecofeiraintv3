@@ -1,22 +1,23 @@
+
 'use client';
 
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { auth, onAuthStateChanged, User } from '../../services/firebase';
 import { getBackupPayload, restoreAppData } from '../../components/Profile/BackupDataManager';
 
-const Card = ({ children, className = "" }: { children: React.ReactNode, className?: string }) => (
+const Card = ({ children, className = "" }: { children?: React.ReactNode, className?: string }) => (
   <div className={`bg-white dark:bg-[#1e293b] rounded-[2.5rem] border border-gray-100 dark:border-gray-800 shadow-2xl overflow-hidden ${className}`}>{children}</div>
 );
-const CardHeader = ({ children }: { children: React.ReactNode }) => (
+const CardHeader = ({ children }: { children?: React.ReactNode }) => (
   <div className="p-8 sm:p-10 border-b border-gray-50 dark:border-gray-800/50 bg-gray-50/30 dark:bg-[#0f172a]/30">{children}</div>
 );
-const CardTitle = ({ children, className = "" }: { children: React.ReactNode, className?: string }) => (
+const CardTitle = ({ children, className = "" }: { children?: React.ReactNode, className?: string }) => (
   <h3 className={`text-2xl sm:text-3xl font-black text-[#111827] dark:text-white tracking-tighter ${className}`}>{children}</h3>
 );
-const CardDescription = ({ children }: { children: React.ReactNode }) => (
+const CardDescription = ({ children }: { children?: React.ReactNode }) => (
   <p className="text-sm font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest mt-2">{children}</p>
 );
-const CardContent = ({ children }: { children: React.ReactNode }) => (
+const CardContent = ({ children }: { children?: React.ReactNode }) => (
   <div className="p-0 sm:p-2">{children}</div>
 );
 
@@ -125,7 +126,7 @@ export default function BackupPage() {
         setIsIframeReady(true);
         console.log('✅ EcoFeira: DriverVault sinalizou ECOFEIRA_BACKUP_READY.');
         
-        // Ao receber prontidão do iframe, solicita o token se o usuário existir
+        // Ao receber prontidão do iframe, solicita o token se the usuário existir
         if (tokenClientRef.current && user) {
             console.log('🔑 EcoFeira: Solicitando token de acesso proativamente...');
             tokenClientRef.current.requestAccessToken();

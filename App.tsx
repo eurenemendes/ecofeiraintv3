@@ -568,7 +568,8 @@ const App: React.FC = () => {
   const handleScanSuccess = (code: string): boolean => {
     const normalizedCode = normalizeString(code);
     if (products.some(p => p.id === code || normalizeString(p.name).includes(normalizedCode) || normalizeString(p.category).includes(normalizedCode))) {
-      setScannedHistory(prev => [code, ...prev.filter(c => c !== code)].slice(0, 10)); 
+      // Explicitly type 'prev' as string[] to avoid 'unknown' inference error
+      setScannedHistory((prev: string[]) => [code, ...prev.filter(c => c !== code)].slice(0, 10)); 
       handleSearchSubmit(code);
       return true;
     } else { 

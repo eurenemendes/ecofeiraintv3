@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="pt-br">
   <head>
@@ -6,8 +7,8 @@
     <title>EcoFeira - Compare e Economize</title>
     <meta name="description" content="Compare preços em supermercados locais, encontre ofertas exclusivas e economize tempo e dinheiro com a lista de compras inteligente do EcoFeira." />
     
-    <!-- Favicon Profissional -->
-    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%2310b981'/%3E%3Cpath d='M11 12c0-2.761 2.239-5 5-5s5 2.239 5 5h-1c0-2.209-1.791-4-4-4s-4 1.791-4 4h-1zm11 2H10c-1.105 0-2 .895-2 2v8c0 1.105.895 2 2 2h12c1.105 0 2-.895 2-2v-8c0-1.105-.895-2-2-2zm-2 4l-4 4-2-2' stroke='white' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round' fill='none'/%3E%3C/svg%3E">
+    <!-- Favicon com a nova cor Laranja #FF6600 -->
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%23FF6600'/%3E%3Cpath d='M11 12c0-2.761 2.239-5 5-5s5 2.239 5 5h-1c0-2.209-1.791-4-4-4s-4 1.791-4 4h-1zm11 2H10c-1.105 0-2 .895-2 2v8c0 1.105.895 2 2 2h12c1.105 0 2-.895 2-2v-8c0-1.105-.895-2-2-2zm-2 4l-4 4-2-2' stroke='white' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round' fill='none'/%3E%3C/svg%3E">
 
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
@@ -21,8 +22,8 @@
           extend: {
             colors: {
               brand: {
-                DEFAULT: '#10b981',
-                dark: '#059669',
+                DEFAULT: '#FF6600', // Laranja da paleta
+                dark: '#D95700',    // Laranja escuro para hover
               }
             },
             borderRadius: {
@@ -73,13 +74,13 @@
         -webkit-user-select: none;
       }
 
-      /* Personalização da Seleção de Texto */
+      /* Personalização da Seleção de Texto com a nova cor */
       ::selection {
-        background-color: #10b981;
+        background-color: #FF6600;
         color: white;
       }
       ::-moz-selection {
-        background-color: #10b981;
+        background-color: #FF6600;
         color: white;
       }
 
@@ -123,7 +124,7 @@
 }
 </script>
 </head>
-  <body class="bg-[#f8fafc] dark:bg-[#0f172a] text-gray-900 dark:text-gray-100 transition-colors duration-300 overflow-x-hidden">
+  <body class="bg-[#FFFFFF] dark:bg-[#000000] text-gray-900 dark:text-gray-100 transition-colors duration-300 overflow-x-hidden">
     <div id="root"></div>
     <!-- Script principal como módulo ES -->
     <script type="module" src="./index.tsx"></script>
