@@ -14,6 +14,7 @@ export const BackupView: React.FC<BackupViewProps> = ({ user }) => {
   const [loading, setLoading] = useState(false);
   const [status, setStatus] = useState<'idle' | 'syncing' | 'success' | 'error'>('idle');
   const [lastBackup, setLastBackup] = useState<DriveFile | null>(null);
+  const [localLastSync, setLocalLastSync] = useState<string | null>(localStorage.getItem('ecofeira_last_sync_time'));
   const [error, setError] = useState<string | null>(null);
 
   const getAccessToken = async () => {
@@ -33,13 +34,22 @@ export const BackupView: React.FC<BackupViewProps> = ({ user }) => {
   };
 
   const checkRemoteBackup = useCallback(async () => {
-    const token = await getAccessToken();
+    const token = sessionStorage.getItem('ecofeira_google_access_token');
     if (!token) return;
     try {
       const file = await googleDriveService.findBackupFile(token);
       setLastBackup(file);
-    } catch (err) {
-      console.error("Erro ao verificar backup remoto:", err);
+      if (file?.modifiedTime) {
+          localStorage.setItem('ecofeira_last_sync_time', file.modifiedTime);
+          setLocalLastSync(file.modifiedTime);
+      }
+    } catch (err: any) {
+      // Se for erro de autorização, apenas mantemos o que está no localStorage
+      if (err.message?.includes('401')) {
+          console.warn("Sessão do Drive expirada. Usando data local.");
+      } else {
+          console.error("Erro ao verificar backup remoto:", err);
+      }
     }
   }, []);
 
@@ -55,6 +65,11 @@ export const BackupView: React.FC<BackupViewProps> = ({ user }) => {
       if (!token) throw new Error("Não foi possível autorizar o acesso ao Drive.");
       const payload = getBackupPayload(user!);
       await googleDriveService.saveBackup(token, payload.data);
+      
+      const now = new Date().toISOString();
+      localStorage.setItem('ecofeira_last_sync_time', now);
+      setLocalLastSync(now);
+      
       await checkRemoteBackup();
       setStatus('success');
       setTimeout(() => setStatus('idle'), 3000);
@@ -65,12 +80,16 @@ export const BackupView: React.FC<BackupViewProps> = ({ user }) => {
   };
 
   const handleRestoreBackup = async () => {
-    if (!lastBackup) return;
     setLoading(true); setStatus('syncing'); setError(null);
     try {
       const token = await getAccessToken();
       if (!token) throw new Error("Não foi possível autorizar o acesso ao Drive.");
-      const data = await googleDriveService.downloadBackup(token, lastBackup.id);
+      
+      // Busca o arquivo novamente para garantir que temos o ID mais recente
+      const file = await googleDriveService.findBackupFile(token);
+      if (!file) throw new Error("Nenhum backup encontrado para restaurar.");
+      
+      const data = await googleDriveService.downloadBackup(token, file.id);
       restoreAppData(data);
     } catch (err: any) {
       setError(err.message || "Erro ao restaurar dados.");
@@ -107,18 +126,24 @@ export const BackupView: React.FC<BackupViewProps> = ({ user }) => {
           <div className="bg-zinc-50 dark:bg-zinc-950 rounded-[2rem] p-8 border border-gray-100 dark:border-zinc-800 space-y-6">
             <div className="flex items-center justify-between">
               <span className="text-sm font-black text-gray-400 uppercase tracking-widest">Status da Nuvem</span>
-              {lastBackup ? (
-                <span className="bg-emerald-500/10 text-emerald-500 text-[10px] font-black px-3 py-1 rounded-full border border-emerald-500/20 uppercase">Arquivo Localizado</span>
+              {localLastSync ? (
+                <span className="bg-emerald-500/10 text-emerald-500 text-[10px] font-black px-3 py-1 rounded-full border border-emerald-500/20 uppercase tracking-tighter">Backup Disponível</span>
               ) : (
-                <span className="bg-gray-100 dark:bg-zinc-800 text-gray-400 text-[10px] font-black px-3 py-1 rounded-full border border-gray-200 dark:border-zinc-700 uppercase">Nenhum Backup</span>
+                <span className="bg-gray-100 dark:bg-zinc-800 text-gray-400 text-[10px] font-black px-3 py-1 rounded-full border border-gray-200 dark:border-zinc-700 uppercase tracking-tighter">Nenhum Backup</span>
               )}
             </div>
             
             <div className="space-y-2">
-              <p className="text-gray-500 dark:text-zinc-500 font-bold">Última sincronização:</p>
+              <p className="text-gray-500 dark:text-zinc-500 font-bold">Última sincronização confirmada:</p>
               <p className="text-xl font-black text-gray-900 dark:text-white">
-                {lastBackup?.modifiedTime ? new Date(lastBackup.modifiedTime).toLocaleString('pt-BR') : 'Nunca sincronizado'}
+                {localLastSync ? new Date(localLastSync).toLocaleString('pt-BR') : 'Nunca sincronizado'}
               </p>
+              {!sessionStorage.getItem('ecofeira_google_access_token') && (
+                <p className="text-[10px] text-orange-500 font-black uppercase mt-4 flex items-center">
+                    <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
+                    Acesso ao Drive expirado. Clique em "Criar Backup" para reconectar.
+                </p>
+              )}
             </div>
           </div>
 
@@ -139,7 +164,7 @@ export const BackupView: React.FC<BackupViewProps> = ({ user }) => {
 
             <button 
               onClick={handleRestoreBackup}
-              disabled={loading || !lastBackup}
+              disabled={loading || (!localLastSync && !lastBackup)}
               className="flex items-center justify-center space-x-3 p-6 rounded-[2rem] font-black text-sm uppercase tracking-wider bg-white dark:bg-zinc-800 text-gray-700 dark:text-zinc-200 border-2 border-gray-100 dark:border-zinc-700 hover:border-brand hover:text-brand transition-all shadow-sm hover:scale-105 active:scale-95 disabled:opacity-30"
             >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" /></svg>

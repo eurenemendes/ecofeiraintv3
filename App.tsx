@@ -550,6 +550,10 @@ const App: React.FC = () => {
                         
                         // Atualiza hash para evitar re-save imediato
                         lastSavedHashRef.current = JSON.stringify(cloudData);
+                        
+                        // Salva data da última sincronização para persistência visual
+                        localStorage.setItem('ecofeira_last_sync_time', new Date().toISOString());
+                        
                         console.log("☁️ EcoFeira: Dados sincronizados da nuvem com sucesso.");
                     }
                 }
@@ -587,9 +591,18 @@ const App: React.FC = () => {
             try {
                 await googleDriveService.saveBackup(token, currentData);
                 lastSavedHashRef.current = currentHash;
+                
+                // Salva data da última sincronização localmente
+                localStorage.setItem('ecofeira_last_sync_time', new Date().toISOString());
+                
                 console.log("☁️ EcoFeira: Backup automático realizado.");
-            } catch (err) {
-                console.error("❌ EcoFeira: Erro no auto-backup:", err);
+            } catch (err: any) {
+                // Se o erro for de autorização (token derretido), apenas logamos e não resetamos o UI
+                if (err.message?.includes('401') || err.message?.includes('token')) {
+                    console.warn("☁️ EcoFeira: Token expirado, auto-backup pausado até reconexão.");
+                } else {
+                    console.error("❌ EcoFeira: Erro no auto-backup:", err);
+                }
             }
         }, SYNC_THROTTLE_MS);
     }
@@ -620,6 +633,7 @@ const App: React.FC = () => {
       localStorage.removeItem('ecofeira_shopping_list');
       localStorage.removeItem('ecofeira_recent_searches');
       localStorage.removeItem('ecofeira_scanned_history');
+      localStorage.removeItem('ecofeira_last_sync_time');
       sessionStorage.removeItem('ecofeira_google_access_token');
 
       setFavorites([]);
@@ -771,7 +785,7 @@ const App: React.FC = () => {
         <Route path="/" element={
           <div className="space-y-12 sm:space-y-24">
             <div className="text-center max-w-4xl mx-auto space-y-6 sm:space-y-8 pt-4 relative overflow-hidden">
-              <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-[18vw] sm:text-[12vw] font-[900] text-brand/5 pointer-events-none select-none tracking-tighter leading-none z-0">economize</div>
+              <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-[18vw] sm:text-[12vw] font-[900] text-brand/5 pointer-events-none select-none tracking-tighter shadow-inner leading-none z-0">economize</div>
               <div className="relative z-10 px-4">
                 <h1 className="text-4xl sm:text-8xl font-[900] text-[#111827] dark:text-white tracking-tighter leading-none animate-in fade-in slide-in-from-top-4 duration-700">Compare e <span className="text-brand">economize</span></h1>
                 <p className="text-gray-500 dark:text-zinc-400 text-base sm:text-xl font-medium max-w-3xl mx-auto leading-relaxed mt-4 sm:mt-8">Explore <span className="text-gray-900 dark:text-white font-black">{stats.stores} parceiros</span>, <span className="text-gray-900 dark:text-white font-black">{stats.products} produtos</span> e <span className="text-brand font-black">{stats.promos} ofertas</span> ativas.</p>
