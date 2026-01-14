@@ -44,9 +44,8 @@ export const BackupView: React.FC<BackupViewProps> = ({ user }) => {
           setLocalLastSync(file.modifiedTime);
       }
     } catch (err: any) {
-      // Se for erro de autorização, apenas mantemos o que está no localStorage
       if (err.message?.includes('401')) {
-          console.warn("Sessão do Drive expirada. Usando data local.");
+          console.warn("☁️ Chave do Drive expirada. Exibindo dados locais de sincronização.");
       } else {
           console.error("Erro ao verificar backup remoto:", err);
       }
@@ -85,7 +84,6 @@ export const BackupView: React.FC<BackupViewProps> = ({ user }) => {
       const token = await getAccessToken();
       if (!token) throw new Error("Não foi possível autorizar o acesso ao Drive.");
       
-      // Busca o arquivo novamente para garantir que temos o ID mais recente
       const file = await googleDriveService.findBackupFile(token);
       if (!file) throw new Error("Nenhum backup encontrado para restaurar.");
       
@@ -98,6 +96,8 @@ export const BackupView: React.FC<BackupViewProps> = ({ user }) => {
   };
 
   if (!user) return null;
+
+  const hasActiveToken = !!sessionStorage.getItem('ecofeira_google_access_token');
 
   return (
     <div className="max-w-3xl mx-auto space-y-8 animate-in fade-in slide-in-from-bottom-6 duration-700">
@@ -114,8 +114,12 @@ export const BackupView: React.FC<BackupViewProps> = ({ user }) => {
         
         <div className="relative z-10 space-y-10">
           <div className="flex items-center space-x-6">
-            <div className="w-20 h-20 bg-brand/10 dark:bg-brand/20 rounded-3xl flex items-center justify-center text-brand border border-brand/20 shadow-xl">
-              <svg className="w-10 h-10" viewBox="0 0 24 24" fill="currentColor"><path d="M7.71,3.5L1.15,15L4.58,21L11.13,9.5L7.71,3.5M9.73,15L6.3,21H19.42L22.85,15H9.73M15,3.5L11.58,9.5L18.13,21L21.56,15L15,3.5Z" /></svg>
+            <div className="w-20 h-20 bg-white dark:bg-zinc-800 rounded-3xl flex items-center justify-center border border-gray-100 dark:border-zinc-700 shadow-xl overflow-hidden">
+              <img 
+                src="https://photos.fife.usercontent.google.com/pw/AP1GczOhdCIXpNggeBmn4vaqpjBYMOETHx6BpfotNL9HErxLEpIXHTMTQdrz=w60-h60" 
+                alt="Google Drive" 
+                className="w-12 h-12 object-contain"
+              />
             </div>
             <div>
               <h1 className="text-3xl sm:text-5xl font-black text-[#111827] dark:text-white tracking-tighter">Backup Cloud</h1>
@@ -138,11 +142,17 @@ export const BackupView: React.FC<BackupViewProps> = ({ user }) => {
               <p className="text-xl font-black text-gray-900 dark:text-white">
                 {localLastSync ? new Date(localLastSync).toLocaleString('pt-BR') : 'Nunca sincronizado'}
               </p>
-              {!sessionStorage.getItem('ecofeira_google_access_token') && (
-                <p className="text-[10px] text-orange-500 font-black uppercase mt-4 flex items-center">
-                    <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
-                    Acesso ao Drive expirado. Clique em "Criar Backup" para reconectar.
-                </p>
+              
+              {!hasActiveToken && (
+                <div className="mt-4 p-4 bg-orange-50 dark:bg-orange-500/10 border border-orange-100 dark:border-orange-900/30 rounded-2xl animate-in slide-in-from-top-2">
+                    <p className="text-[10px] text-orange-600 dark:text-orange-400 font-black uppercase flex items-center">
+                        <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
+                        Acesso ao Drive Expirado
+                    </p>
+                    <p className="text-xs font-bold text-orange-500/80 dark:text-orange-400/80 mt-1 leading-relaxed">
+                        Por segurança, o Google encerrou sua chave de acesso temporária. Clique em <b>Criar Backup</b> para reconectar sua conta.
+                    </p>
+                </div>
               )}
             </div>
           </div>
@@ -164,7 +174,7 @@ export const BackupView: React.FC<BackupViewProps> = ({ user }) => {
 
             <button 
               onClick={handleRestoreBackup}
-              disabled={loading || (!localLastSync && !lastBackup)}
+              disabled={loading || !localLastSync}
               className="flex items-center justify-center space-x-3 p-6 rounded-[2rem] font-black text-sm uppercase tracking-wider bg-white dark:bg-zinc-800 text-gray-700 dark:text-zinc-200 border-2 border-gray-100 dark:border-zinc-700 hover:border-brand hover:text-brand transition-all shadow-sm hover:scale-105 active:scale-95 disabled:opacity-30"
             >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" /></svg>
