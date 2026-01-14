@@ -15,6 +15,7 @@ import { ScannerModal } from './components/ScannerModal.tsx';
 import { ClearButton } from './components/ui/ClearButton.tsx';
 import { FavoritesView } from './components/Favorites/FavoritesView.tsx';
 import { ConfirmModal } from './components/ui/ConfirmModal.tsx';
+import { SearchConfirmModal } from './components/ui/SearchConfirmModal.tsx'; // Se houver, caso contrário remover
 import { SearchButton } from './components/ui/SearchButton.tsx';
 import { InputClearButton } from './components/ui/InputClearButton.tsx';
 import { SearchInput } from './components/ui/SearchInput.tsx';
@@ -735,7 +736,6 @@ const App: React.FC = () => {
     return result;
   }, [products, searchQuery, selectedCategory, selectedSupermarket, sortBy, onlyPromos]);
 
-  // Fix: Explicitly cast Array.from to string[] to avoid 'unknown' type errors when passing elements to normalizeString
   const searchSuggestions = useMemo(() => {
     if (!searchQuery || searchQuery.length < 2) return [];
     const q = normalizeString(searchQuery);
@@ -745,9 +745,7 @@ const App: React.FC = () => {
   }, [products, searchQuery]);
 
   const favoritedProducts = useMemo(() => products.filter(p => favorites.includes(p.id)), [products, favorites]);
-  // Fix: Explicitly cast categories to string[] to avoid potential 'unknown' inferences from Set conversions
   const categories = useMemo(() => ['Todas', ...(Array.from(new Set(products.map(p => p.category))) as string[])], [products]);
-  // Fix: Explicitly cast supermarketNames to string[] to avoid potential 'unknown' inferences from Set conversions
   const supermarketNames = useMemo(() => ['Todos', ...(Array.from(new Set(products.map(p => p.supermarket))) as string[])], [products]);
   const openStoreDetail = (store: Supermarket) => { setSelectedCategory('Todas'); setSearchQuery(''); setSortBy('none'); setCurrentPage(1); navigate(`/supermercado/${store.id}`); window.scrollTo({ top: 0, behavior: 'smooth' }); };
 
@@ -887,7 +885,28 @@ const App: React.FC = () => {
               </div>
               <div className="space-y-6 sm:space-y-10">
                 <div className="overflow-hidden"><span className="text-[10px] font-[900] text-gray-400 uppercase tracking-[1px] mb-3 block">CATEGORIAS:</span><div ref={categoriesRef} className="flex items-center gap-2 sm:gap-4 overflow-x-auto no-scrollbar pb-2 cursor-grab select-none active:cursor-grabbing">{categories.map(cat => <button key={cat} onClick={() => setSelectedCategory(cat)} className={`flex-shrink-0 px-6 py-3 rounded-xl sm:rounded-[1.5rem] text-xs sm:text-[15px] font-[800] transition-all shadow-sm ${selectedCategory === cat ? 'bg-brand text-white shadow-xl shadow-brand/30 scale-105' : 'bg-white dark:bg-zinc-900 text-gray-600 dark:text-zinc-300 border border-gray-100 dark:border-zinc-800 hover:border-brand'}`}>{cat}</button>)}</div></div>
-                <div className="overflow-hidden"><span className="text-[10px] font-[900] text-gray-400 uppercase tracking-[1px] mb-3 block">LOJAS:</span><div ref={storesRef} className="flex items-center gap-2 sm:gap-4 overflow-x-auto no-scrollbar pb-2 cursor-grab select-none active:cursor-grabbing">{supermarketNames.map(store => <button key={store} onClick={() => setSelectedSupermarket(store)} className={`flex-shrink-0 px-6 py-3 rounded-xl sm:rounded-[1.5rem] text-xs sm:text-[15px] font-[800] transition-all shadow-sm flex items-center space-x-2 ${selectedSupermarket === store ? 'bg-brand text-white shadow-xl shadow-brand/30 scale-105' : 'bg-white dark:bg-zinc-900 text-gray-600 dark:text-zinc-300 border border-gray-100 dark:border-zinc-800 hover:border-brand'}`}>{store}</button>)}</div></div>
+                <div className="overflow-hidden">
+                  <span className="text-[10px] font-[900] text-gray-400 uppercase tracking-[1px] mb-3 block">LOJAS:</span>
+                  <div ref={storesRef} className="flex items-center gap-2 sm:gap-4 overflow-x-auto no-scrollbar pb-2 cursor-grab select-none active:cursor-grabbing">
+                    {supermarketNames.map(store => {
+                      const storeData = stores.find(s => normalizeString(s.name) === normalizeString(store));
+                      return (
+                        <button 
+                          key={store} 
+                          onClick={() => setSelectedSupermarket(store)} 
+                          className={`flex-shrink-0 px-6 py-3 rounded-xl sm:rounded-[1.5rem] text-xs sm:text-[15px] font-[800] transition-all shadow-sm flex items-center space-x-3 ${selectedSupermarket === store ? 'bg-brand text-white shadow-xl shadow-brand/30 scale-105' : 'bg-white dark:bg-zinc-900 text-gray-600 dark:text-zinc-300 border border-gray-100 dark:border-zinc-800 hover:border-brand'}`}
+                        >
+                          {store !== 'Todos' && storeData?.logo && (
+                            <div className="w-5 h-5 sm:w-7 sm:h-7 bg-white rounded-lg p-0.5 flex-shrink-0 flex items-center justify-center shadow-sm">
+                              <img src={storeData.logo} className="w-full h-full object-contain" alt="" />
+                            </div>
+                          )}
+                          <span>{store}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
               </div>
             </div>
             <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-12">{filteredProducts.slice((currentPage-1)*ITEMS_PER_PAGE, currentPage*ITEMS_PER_PAGE).map((p) => <ProductCard key={p.id} product={p} onAddToList={addToList} onToggleFavorite={toggleFavorite} isFavorite={favorites.includes(p.id)} storeLogo={stores.find(s => normalizeString(s.name) === normalizeString(p.supermarket))?.logo} user={user} />)}</div>
