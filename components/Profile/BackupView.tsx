@@ -116,7 +116,7 @@ export const BackupView: React.FC<BackupViewProps> = ({ user }) => {
           <div className="flex items-center space-x-6">
             <div className="w-20 h-20 bg-white dark:bg-zinc-800 rounded-3xl flex items-center justify-center border border-gray-100 dark:border-zinc-700 shadow-xl overflow-hidden">
               <img 
-                src="https://photos.fife.usercontent.google.com/pw/AP1GczOhdCIXpNggeBmn4vaqpjBYMOETHx6BpfotNL9HErxLEpIXHTMTQdrz=w60-h60" 
+                src="https://lh3.googleusercontent.com/pw/AP1GczM9bwcmJa6-bqvODBn5shs5yt8ryC3_W2kJSad-baPqqGcxhlC_X8M6mIfT4t3KYKKJWNbUV15p18E7BdzhSkm5XtCnDqvbufDcyxTDOlJ6un-4SGi_6ZwQl8SlbrN4Wx4phuVHWExlgrETEH6MNiim=w60-h60" 
                 alt="Google Drive" 
                 className="w-12 h-12 object-contain"
               />
