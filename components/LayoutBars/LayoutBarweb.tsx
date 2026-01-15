@@ -23,8 +23,16 @@ export const LayoutBarweb: React.FC<LayoutBarwebProps> = ({
   toggleDarkMode,
   toggleMenu
 }) => {
+  // Lógica de verificação
+  const isVerified = user?.emailVerified;
+  const verificationClasses = user 
+    ? (isVerified 
+        ? 'border-emerald-500 shadow-[0_4px_20px_rgba(16,185,129,0.4)]' 
+        : 'border-red-500 shadow-[0_4px_15px_rgba(239,68,68,0.2)]')
+    : 'border-red-500'; // Caso não esteja logado, assume o estado não verificado
+
   return (
-    <header className="hidden lg:block bg-white/95 dark:bg-black/95 backdrop-blur-md border-b border-gray-100 dark:border-zinc-900 sticky top-0 z-[100] transition-colors duration-300">
+    <header className={`hidden lg:block bg-white/95 dark:bg-black/95 backdrop-blur-md sticky top-0 z-[100] transition-all duration-500 border-b-2 ${verificationClasses}`}>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-20">
           {/* Logo */}
