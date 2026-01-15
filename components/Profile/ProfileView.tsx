@@ -84,18 +84,16 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
             </div>
             
             {/* Selo de Verificação no canto direito inferior */}
-            <div className="absolute -bottom-1 -right-1 sm:bottom-1 sm:right-1 z-20">
-              <div className="relative flex items-center justify-center">
+            <div className="absolute -bottom-2 -right-2 sm:bottom-0 sm:right-0 z-20">
+              <div className="relative flex items-center justify-center w-8 h-8 sm:w-16 sm:h-16">
                 {!isVerified && (
                   <div className="absolute inset-0 rounded-full border-2 border-red-500 animate-pulse scale-110"></div>
                 )}
-                <div className={`bg-white dark:bg-zinc-800 rounded-full p-0.5 shadow-lg border-2 ${isVerified ? 'border-brand/20' : 'border-red-500'}`}>
-                  <img 
-                    src={VERIFIED_ICON_URL} 
-                    alt={isVerified ? "Verificado" : "Não verificado"}
-                    className={`w-7 h-7 sm:w-12 sm:h-12 object-contain transition-all duration-500 ${!isVerified ? 'grayscale brightness-75' : 'scale-100'}`}
-                  />
-                </div>
+                <img 
+                  src={VERIFIED_ICON_URL} 
+                  alt={isVerified ? "Verificado" : "Não verificado"}
+                  className={`w-full h-full object-contain transition-all duration-500 ${!isVerified ? 'grayscale brightness-75' : 'scale-110'}`}
+                />
               </div>
             </div>
           </div>
