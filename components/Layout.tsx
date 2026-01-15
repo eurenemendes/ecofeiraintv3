@@ -1,6 +1,8 @@
 
 import React, { useState, useEffect } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+// Fix: Use namespace import for react-router-dom to resolve "no exported member" errors
+import * as ReactRouterDOM from 'react-router-dom';
+const { useNavigate, useLocation } = ReactRouterDOM;
 import { User } from '../services/firebase';
 import { LayoutBarweb } from './LayoutBars/LayoutBarweb';
 import { LayoutBarmobile } from './LayoutBars/LayoutBarmobile';

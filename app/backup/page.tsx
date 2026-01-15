@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useEffect, useRef, useState, useCallback } from 'react';
@@ -29,7 +28,7 @@ export default function BackupPage() {
   const tokenClientRef = useRef<any>(null);
 
   const CHILD_APP_URL = 'https://drivervault.vercel.app/';
-  const GOOGLE_CLIENT_ID = '349676062186-jsle32i8463qpad128u2g7grjtj4td33.apps.googleusercontent.com';
+  const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID || '349676062186-jsle32i8463qpad128u2g7grjtj4td33.apps.googleusercontent.com';
 
   /**
    * FLUXO OTIMIZADO:
@@ -106,7 +105,7 @@ export default function BackupPage() {
     };
     document.body.appendChild(script);
     return () => { if (document.body.contains(script)) document.body.removeChild(script); };
-  }, [handleTokenResponseAndSendData, isIframeReady, user]);
+  }, [handleTokenResponseAndSendData, isIframeReady, user, GOOGLE_CLIENT_ID]);
 
   // Listener para mensagens do Iframe
   useEffect(() => {

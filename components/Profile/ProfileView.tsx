@@ -1,6 +1,8 @@
 
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+// Fix: Use namespace import for react-router-dom to resolve "no exported member" errors
+import * as ReactRouterDOM from 'react-router-dom';
+const { useNavigate } = ReactRouterDOM;
 import { User } from '../../services/firebase';
 
 interface ProfileViewProps {
@@ -30,7 +32,7 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
   if (!user) {
     return (
       <div className="max-w-2xl mx-auto py-12 sm:py-24 px-4 text-center animate-in fade-in slide-in-from-bottom-6 duration-700">
-        <div className="bg-white dark:bg-[#1e293b] rounded-[3rem] p-10 sm:p-20 border border-gray-100 dark:border-gray-800 shadow-xl relative overflow-hidden">
+        <div className="bg-white dark:bg-[#1e293b] rounded-[3rem] p-10 sm:p-20 border border-gray-100 dark:border-zinc-800 shadow-xl relative overflow-hidden">
           <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-brand via-brand-dark to-brand"></div>
           <div className="w-24 h-24 bg-brand/10 rounded-[2.5rem] flex items-center justify-center mx-auto mb-10 shadow-inner">
             <svg className="w-12 h-12 text-brand" fill="none" stroke="currentColor" viewBox="0 0 24 24">

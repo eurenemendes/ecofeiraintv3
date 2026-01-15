@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="pt-br">
   <head>
@@ -13,8 +12,12 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
     <script>
-      // Shim para o process.env para evitar erros de runtime no navegador
-      window.process = { env: { API_KEY: "" } };
+      // Shim profissional para process.env, garantindo compatibilidade e segurança
+      window.process = window.process || { env: {} };
+      window.process.env = {
+        API_KEY: window.process.env.API_KEY || "",
+        ...window.process.env
+      };
       
       tailwind.config = {
         darkMode: 'class',

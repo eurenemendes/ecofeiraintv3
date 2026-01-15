@@ -1,6 +1,8 @@
 
 import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
-import { Routes, Route, useNavigate, useParams, useLocation, Navigate, Link } from 'react-router-dom';
+// Fix: Use namespace import for react-router-dom to resolve "no exported member" errors
+import * as ReactRouterDOM from 'react-router-dom';
+const { Routes, Route, useNavigate, useParams, useLocation, Navigate, Link } = ReactRouterDOM;
 import { Product, Supermarket, MainBanner, GridBanner, ShoppingListItem } from './types.ts';
 import { getProducts, getSupermarkets, getMainBanners, getGridBanners, getPopularSuggestions } from './services/googleSheetsService.ts';
 import { Layout } from './components/Layout.tsx';

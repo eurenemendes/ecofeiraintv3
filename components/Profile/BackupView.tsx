@@ -1,6 +1,8 @@
 
 import React, { useEffect, useState, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
+// Fix: Use namespace import for react-router-dom to resolve "no exported member" errors
+import * as ReactRouterDOM from 'react-router-dom';
+const { useNavigate } = ReactRouterDOM;
 import { User, auth, GoogleAuthProvider, signInWithPopup, googleProvider } from '../../services/firebase';
 import { getBackupPayload, restoreAppData } from './BackupDataManager';
 import { googleDriveService, DriveFile } from '../../services/googleDriveService';
