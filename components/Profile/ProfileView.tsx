@@ -64,7 +64,7 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
     );
   }
 
-  // Verifica se o usuário é verificado (usando emailVerified do Firebase como critério)
+  // Verifica se o usuário é verificado
   const isVerified = user.emailVerified;
 
   return (
@@ -73,9 +73,9 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
         <div className="absolute top-0 right-0 w-64 h-64 bg-brand/5 rounded-full -mr-20 -mt-20 blur-3xl"></div>
         
         <div className="flex flex-col sm:flex-row items-center gap-8 sm:gap-12 relative z-10">
-          {/* Container da Foto de Perfil com Selo */}
+          {/* Container da Foto de Perfil com Selo e Borda Neon Dinâmica */}
           <div className="relative">
-            <div className="w-32 h-32 sm:w-44 sm:h-44 bg-brand/10 rounded-[3rem] flex items-center justify-center border-4 border-white dark:border-gray-800 shadow-xl overflow-hidden">
+            <div className={`w-32 h-32 sm:w-44 sm:h-44 bg-brand/10 rounded-[3rem] flex items-center justify-center border-4 shadow-xl overflow-hidden transition-all duration-700 ${isVerified ? 'border-emerald-500 shadow-[0_0_30px_rgba(16,185,129,0.3)]' : 'border-red-500 shadow-[0_0_20px_rgba(239,68,68,0.2)]'}`}>
                <img 
                  src={user.photoURL || `https://api.dicebear.com/7.x/avataaars/svg?seed=${user.uid}`} 
                  alt="Avatar" 

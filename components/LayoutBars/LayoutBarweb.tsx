@@ -23,25 +23,17 @@ export const LayoutBarweb: React.FC<LayoutBarwebProps> = ({
   toggleDarkMode,
   toggleMenu
 }) => {
-  // Lógica de verificação
+  // Lógica de verificação para a foto de perfil
   const isVerified = user?.emailVerified;
   
-  // Classe da borda da barra (geral)
-  const verificationClasses = user 
-    ? (isVerified 
-        ? 'border-emerald-500 shadow-[0_4px_20px_rgba(16,185,129,0.4)]' 
-        : 'border-red-500 shadow-[0_4px_15px_rgba(239,68,68,0.2)]')
-    : 'border-red-500';
-
-  // Classe específica para a borda da foto de perfil
   const profileBorderClass = user 
     ? (isVerified 
         ? 'border-2 border-emerald-400 shadow-[0_0_10px_rgba(52,211,153,0.8)]' 
         : 'border-2 border-red-500')
-    : 'border-2 border-red-500';
+    : 'border-2 border-transparent';
 
   return (
-    <header className={`hidden lg:block bg-white/95 dark:bg-black/95 backdrop-blur-md sticky top-0 z-[100] transition-all duration-500 border-b-2 ${verificationClasses}`}>
+    <header className="hidden lg:block bg-white/95 dark:bg-black/95 backdrop-blur-md sticky top-0 z-[100] transition-all duration-500 border-b border-gray-100 dark:border-zinc-900">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-20">
           {/* Logo */}
