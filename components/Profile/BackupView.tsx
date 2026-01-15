@@ -19,20 +19,42 @@ export const BackupView: React.FC<BackupViewProps> = ({ user }) => {
   const [localLastSync, setLocalLastSync] = useState<string | null>(localStorage.getItem('ecofeira_last_sync_time'));
   const [error, setError] = useState<string | null>(null);
 
-  const getAccessToken = async () => {
-    let token = sessionStorage.getItem('ecofeira_google_access_token');
-    if (!token) {
-      try {
-        const result = await signInWithPopup(auth, googleProvider);
-        const credential = GoogleAuthProvider.credentialFromResult(result);
-        token = credential?.accessToken || null;
-        if (token) sessionStorage.setItem('ecofeira_google_access_token', token);
-      } catch (err) {
-        console.error("Erro ao obter token:", err);
-        return null;
+  /**
+   * Obtém o token de acesso garantindo que a conta selecionada é a mesma logada no Firebase.
+   */
+  const getValidAccessToken = async () => {
+    try {
+      // 1. Configura a "dica" de login para o Google sugerir a conta correta automaticamente
+      if (user?.email) {
+        googleProvider.setCustomParameters({
+          login_hint: user.email,
+          prompt: 'select_account' // Garante que o seletor apareça se houver conflito
+        });
       }
+
+      const result = await signInWithPopup(auth, googleProvider);
+      const credential = GoogleAuthProvider.credentialFromResult(result);
+      const token = credential?.accessToken || null;
+      
+      if (!token) throw new Error("Não foi possível gerar a chave de acesso ao Google Drive.");
+
+      // 2. Validação de Segurança (Cross-Check):
+      // Chamamos a API de identidade do Google para confirmar quem é o dono deste token
+      const checkResp = await fetch(`https://www.googleapis.com/oauth2/v3/userinfo?access_token=${token}`);
+      const checkData = await checkResp.json();
+      
+      if (checkData.email && user?.email && checkData.email.toLowerCase() !== user.email.toLowerCase()) {
+          console.error("🚨 Conflito de Identidade detectado!");
+          throw new Error(`Atenção: Você tentou conectar a conta ${checkData.email}, mas está logado no site como ${user.email}. Use a mesma conta para o backup.`);
+      }
+
+      sessionStorage.setItem('ecofeira_google_access_token', token);
+      return token;
+    } catch (err: any) {
+      console.error("Erro de autenticação Drive:", err);
+      setError(err.message || "Erro ao conectar com o Google.");
+      return null;
     }
-    return token;
   };
 
   const checkRemoteBackup = useCallback(async () => {
@@ -47,7 +69,8 @@ export const BackupView: React.FC<BackupViewProps> = ({ user }) => {
       }
     } catch (err: any) {
       if (err.message?.includes('401')) {
-          console.warn("☁️ Chave do Drive expirada. Exibindo dados locais de sincronização.");
+          console.warn("☁️ Chave do Drive expirada.");
+          sessionStorage.removeItem('ecofeira_google_access_token');
       } else {
           console.error("Erro ao verificar backup remoto:", err);
       }
@@ -62,8 +85,9 @@ export const BackupView: React.FC<BackupViewProps> = ({ user }) => {
   const handleCreateBackup = async () => {
     setLoading(true); setStatus('syncing'); setError(null);
     try {
-      const token = await getAccessToken();
-      if (!token) throw new Error("Não foi possível autorizar o acesso ao Drive.");
+      const token = await getValidAccessToken();
+      if (!token) return; 
+
       const payload = getBackupPayload(user!);
       await googleDriveService.saveBackup(token, payload.data);
       
@@ -75,7 +99,7 @@ export const BackupView: React.FC<BackupViewProps> = ({ user }) => {
       setStatus('success');
       setTimeout(() => setStatus('idle'), 3000);
     } catch (err: any) {
-      setError(err.message || "Erro desconhecido ao salvar.");
+      setError(err.message || "Erro ao salvar backup.");
       setStatus('error');
     } finally { setLoading(false); }
   };
@@ -83,11 +107,11 @@ export const BackupView: React.FC<BackupViewProps> = ({ user }) => {
   const handleRestoreBackup = async () => {
     setLoading(true); setStatus('syncing'); setError(null);
     try {
-      const token = await getAccessToken();
-      if (!token) throw new Error("Não foi possível autorizar o acesso ao Drive.");
+      const token = await getValidAccessToken();
+      if (!token) return;
       
       const file = await googleDriveService.findBackupFile(token);
-      if (!file) throw new Error("Nenhum backup encontrado para restaurar.");
+      if (!file) throw new Error("Nenhum backup encontrado nesta conta Google.");
       
       const data = await googleDriveService.downloadBackup(token, file.id);
       restoreAppData(data);
@@ -111,6 +135,20 @@ export const BackupView: React.FC<BackupViewProps> = ({ user }) => {
         <span>Voltar ao Perfil</span>
       </button>
 
+      {error && (
+        <div className="p-6 bg-red-50 dark:bg-red-900/20 border-2 border-red-100 dark:border-red-900/30 rounded-3xl animate-in zoom-in-95">
+          <div className="flex items-start space-x-4">
+            <div className="bg-red-500 text-white p-2 rounded-xl shrink-0">
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
+            </div>
+            <div>
+              <p className="text-red-800 dark:text-red-200 font-black text-sm">Erro de Sincronização</p>
+              <p className="text-red-600 dark:text-red-400 text-xs font-bold mt-1 leading-relaxed">{error}</p>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="bg-white dark:bg-zinc-900 rounded-[3rem] p-8 sm:p-16 border border-gray-100 dark:border-zinc-800 shadow-sm relative overflow-hidden">
         <div className="absolute top-0 right-0 w-64 h-64 bg-brand/5 rounded-full -mr-20 -mt-20 blur-3xl"></div>
         
@@ -124,8 +162,8 @@ export const BackupView: React.FC<BackupViewProps> = ({ user }) => {
               />
             </div>
             <div>
-              <h1 className="text-3xl sm:text-5xl font-black text-[#111827] dark:text-white tracking-tighter">Backup Cloud</h1>
-              <p className="text-xs font-black text-gray-400 uppercase tracking-widest mt-1">Sincronização Nativa via Google Drive</p>
+              <h1 className="text-3xl sm:text-5xl font-black text-[#111827] dark:text-white tracking-tighter">Backup Seguro</h1>
+              <p className="text-xs font-black text-gray-400 uppercase tracking-widest mt-1">Vinculado a {user.email}</p>
             </div>
           </div>
 
@@ -140,19 +178,16 @@ export const BackupView: React.FC<BackupViewProps> = ({ user }) => {
             </div>
             
             <div className="space-y-2">
-              <p className="text-gray-500 dark:text-zinc-500 font-bold">Última sincronização confirmada:</p>
+              <p className="text-gray-500 dark:text-zinc-500 font-bold">Última sincronização ativa:</p>
               <p className="text-xl font-black text-gray-900 dark:text-white">
                 {localLastSync ? new Date(localLastSync).toLocaleString('pt-BR') : 'Nunca sincronizado'}
               </p>
               
               {!hasActiveToken && (
-                <div className="mt-4 p-4 bg-orange-50 dark:bg-orange-500/10 border border-orange-100 dark:border-orange-900/30 rounded-2xl animate-in slide-in-from-top-2">
+                <div className="mt-4 p-4 bg-orange-50 dark:bg-orange-500/10 border border-orange-100 dark:border-orange-900/30 rounded-2xl">
                     <p className="text-[10px] text-orange-600 dark:text-orange-400 font-black uppercase flex items-center">
                         <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
-                        Acesso ao Drive Expirado
-                    </p>
-                    <p className="text-xs font-bold text-orange-500/80 dark:text-orange-400/80 mt-1 leading-relaxed">
-                        Por segurança, o Google encerrou sua chave de acesso temporária. Clique em <b>Criar Backup</b> para reconectar sua conta.
+                        Reconexão necessária para auto-backup
                     </p>
                 </div>
               )}
@@ -180,14 +215,8 @@ export const BackupView: React.FC<BackupViewProps> = ({ user }) => {
               className="flex items-center justify-center space-x-3 p-6 rounded-[2rem] font-black text-sm uppercase tracking-wider bg-white dark:bg-zinc-800 text-gray-700 dark:text-zinc-200 border-2 border-gray-100 dark:border-zinc-700 hover:border-brand hover:text-brand transition-all shadow-sm hover:scale-105 active:scale-95 disabled:opacity-30"
             >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" /></svg>
-              <span>Restaurar Dados</span>
+              <span>Restaurar</span>
             </button>
-          </div>
-
-          <div className="pt-6 border-t border-gray-100 dark:border-zinc-800">
-            <p className="text-[10px] font-bold text-gray-400 dark:text-zinc-600 uppercase tracking-[2px] text-center leading-relaxed">
-              Os dados são armazenados de forma segura na pasta oculta do seu Google Drive.
-            </p>
           </div>
         </div>
       </div>
