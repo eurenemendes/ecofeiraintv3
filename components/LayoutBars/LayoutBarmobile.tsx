@@ -27,11 +27,20 @@ export const LayoutBarmobile: React.FC<LayoutBarmobileProps> = ({
 
   // Lógica de verificação
   const isVerified = user?.emailVerified;
+  
+  // Classe da borda da barra (geral)
   const verificationClasses = user 
     ? (isVerified 
         ? 'border-emerald-500 shadow-[0_-4px_20px_rgba(16,185,129,0.4)]' 
         : 'border-red-500 shadow-[0_-4px_15px_rgba(239,68,68,0.1)]')
     : 'border-red-500';
+
+  // Classe específica para a borda da foto de perfil
+  const profileBorderClass = user 
+    ? (isVerified 
+        ? 'border-2 border-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.8)]' 
+        : 'border-2 border-red-500')
+    : 'border-2 border-red-500';
 
   return (
     <nav className={`lg:hidden fixed bottom-0 left-0 right-0 z-[150] bg-white/95 dark:bg-black/95 backdrop-blur-md flex justify-around items-center px-2 py-2 transition-all duration-500 border-t-2 ${verificationClasses}`}>
@@ -82,9 +91,11 @@ export const LayoutBarmobile: React.FC<LayoutBarmobileProps> = ({
         className={`flex flex-col items-center py-2 px-1 rounded-2xl flex-1 transition-all duration-300 ${isActive('/perfil') || isActive('/favoritos') ? 'text-brand bg-brand/10' : 'text-gray-400'}`}
       >
         {user && user.photoURL ? (
-          <img src={user.photoURL} alt="" className="w-6 h-6 rounded-full border border-gray-200 dark:border-zinc-800 object-cover" />
+          <img src={user.photoURL} alt="" className={`w-6 h-6 rounded-full object-cover ${profileBorderClass}`} />
         ) : (
-          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
+          <div className={`rounded-full ${profileBorderClass}`}>
+            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
+          </div>
         )}
         <span className="text-[10px] font-black uppercase mt-1 tracking-tighter">Perfil</span>
       </button>

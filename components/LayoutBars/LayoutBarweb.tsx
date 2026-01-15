@@ -25,11 +25,20 @@ export const LayoutBarweb: React.FC<LayoutBarwebProps> = ({
 }) => {
   // Lógica de verificação
   const isVerified = user?.emailVerified;
+  
+  // Classe da borda da barra (geral)
   const verificationClasses = user 
     ? (isVerified 
         ? 'border-emerald-500 shadow-[0_4px_20px_rgba(16,185,129,0.4)]' 
         : 'border-red-500 shadow-[0_4px_15px_rgba(239,68,68,0.2)]')
-    : 'border-red-500'; // Caso não esteja logado, assume o estado não verificado
+    : 'border-red-500';
+
+  // Classe específica para a borda da foto de perfil
+  const profileBorderClass = user 
+    ? (isVerified 
+        ? 'border-2 border-emerald-400 shadow-[0_0_10px_rgba(52,211,153,0.8)]' 
+        : 'border-2 border-red-500')
+    : 'border-2 border-red-500';
 
   return (
     <header className={`hidden lg:block bg-white/95 dark:bg-black/95 backdrop-blur-md sticky top-0 z-[100] transition-all duration-500 border-b-2 ${verificationClasses}`}>
@@ -96,7 +105,7 @@ export const LayoutBarweb: React.FC<LayoutBarwebProps> = ({
             {/* Perfil */}
             <button 
               onClick={() => handleNav('/perfil')} 
-              className={`p-1 rounded-full transition-all border hover:border-brand/50 ${isActive('/perfil') ? 'border-brand bg-brand/10' : 'border-gray-100 dark:border-zinc-800'}`}
+              className={`p-1 rounded-full transition-all ${profileBorderClass} ${isActive('/perfil') ? 'bg-brand/10' : ''}`}
               aria-label="Perfil"
             >
               {user && user.photoURL ? (
