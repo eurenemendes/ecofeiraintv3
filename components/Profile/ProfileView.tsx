@@ -23,6 +23,9 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
   const navigate = useNavigate();
   const [isLoggingIn, setIsLoggingIn] = useState(false);
 
+  // URL do ícone de verificado conforme solicitado
+  const VERIFIED_ICON_URL = "https://img.icons8.com/color/96/verified-badge.png";
+
   const handleLogin = async () => {
     setIsLoggingIn(true);
     await onLogin();
@@ -61,18 +64,40 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
     );
   }
 
+  // Verifica se o usuário é verificado (usando emailVerified do Firebase como critério)
+  const isVerified = user.emailVerified;
+
   return (
     <div className="max-w-4xl mx-auto space-y-12 sm:space-y-16 animate-in fade-in slide-in-from-bottom-6 duration-700">
       <div className="bg-white dark:bg-[#1e293b] rounded-[3rem] p-8 sm:p-16 border border-gray-100 dark:border-gray-800 shadow-sm relative overflow-hidden text-center sm:text-left">
         <div className="absolute top-0 right-0 w-64 h-64 bg-brand/5 rounded-full -mr-20 -mt-20 blur-3xl"></div>
         
         <div className="flex flex-col sm:flex-row items-center gap-8 sm:gap-12 relative z-10">
-          <div className="w-32 h-32 sm:w-44 sm:h-44 bg-brand/10 rounded-[3rem] flex items-center justify-center border-4 border-white dark:border-gray-800 shadow-xl overflow-hidden">
-             <img 
-               src={user.photoURL || `https://api.dicebear.com/7.x/avataaars/svg?seed=${user.uid}`} 
-               alt="Avatar" 
-               className="w-full h-full object-cover"
-             />
+          {/* Container da Foto de Perfil com Selo */}
+          <div className="relative">
+            <div className="w-32 h-32 sm:w-44 sm:h-44 bg-brand/10 rounded-[3rem] flex items-center justify-center border-4 border-white dark:border-gray-800 shadow-xl overflow-hidden">
+               <img 
+                 src={user.photoURL || `https://api.dicebear.com/7.x/avataaars/svg?seed=${user.uid}`} 
+                 alt="Avatar" 
+                 className="w-full h-full object-cover"
+               />
+            </div>
+            
+            {/* Selo de Verificação no canto direito inferior */}
+            <div className="absolute -bottom-2 -right-2 sm:-bottom-1 sm:-right-1 z-20">
+              <div className="relative flex items-center justify-center">
+                {!isVerified && (
+                  <div className="absolute inset-0 rounded-full border-2 border-red-500 animate-pulse scale-150 bg-red-500/10"></div>
+                )}
+                <div className={`bg-white dark:bg-zinc-800 rounded-full p-0.5 shadow-lg border-2 ${isVerified ? 'border-brand/20' : 'border-gray-100 dark:border-gray-700'}`}>
+                  <img 
+                    src={VERIFIED_ICON_URL} 
+                    alt={isVerified ? "Verificado" : "Não verificado"}
+                    className={`w-6 h-6 sm:w-10 sm:h-10 object-contain transition-all duration-500 ${!isVerified ? 'grayscale opacity-60' : 'scale-110'}`}
+                  />
+                </div>
+              </div>
+            </div>
           </div>
           
           <div className="space-y-4">
@@ -84,9 +109,9 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
                  <code className="text-[10px] font-bold text-brand bg-brand/5 px-2 py-0.5 rounded-md">{user.uid}</code>
               </div>
             </div>
-            <div className="inline-flex items-center px-4 py-2 bg-brand text-white rounded-xl text-xs font-black uppercase tracking-widest shadow-lg shadow-brand/20">
+            <div className={`inline-flex items-center px-4 py-2 rounded-xl text-xs font-black uppercase tracking-widest shadow-lg transition-all duration-500 ${isVerified ? 'bg-brand text-white shadow-brand/20' : 'bg-gray-100 dark:bg-zinc-800 text-gray-400'}`}>
               <svg className="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 24 24"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" /></svg>
-              <span>Membro Ativo</span>
+              <span>{isVerified ? 'Membro Verificado' : 'Aguardando Verificação'}</span>
             </div>
           </div>
         </div>
@@ -103,7 +128,9 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
         </div>
         <div className="bg-white dark:bg-[#1e293b] p-8 rounded-[2.5rem] border border-gray-100 dark:border-gray-800 shadow-sm hover:scale-105 transition-transform">
           <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Conta</p>
-          <p className="text-xl font-[1000] text-brand tracking-tighter">Verificada</p>
+          <p className={`text-xl font-[1000] tracking-tighter ${isVerified ? 'text-brand' : 'text-gray-400'}`}>
+            {isVerified ? 'Verificada' : 'Pendente'}
+          </p>
         </div>
       </div>
 
