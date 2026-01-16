@@ -23,6 +23,7 @@ import { SearchInput } from './components/ui/SearchInput.tsx';
 import { ShoppingListView } from './components/ShoppingList/ShoppingListView.tsx';
 import { StoreMarquee } from './components/StoreMarquee.tsx';
 import { CategoryFilter } from './components/ui/CategoryFilter.tsx';
+import { StoreFilter } from './components/ui/StoreFilter.tsx';
 import { auth, googleProvider, signInWithPopup, signOut, onAuthStateChanged, User, GoogleAuthProvider } from './services/firebase.ts';
 import { googleDriveService } from './services/googleDriveService.ts';
 
@@ -883,28 +884,15 @@ const App: React.FC = () => {
                   title="CATEGORIAS:"
                   containerRef={categoriesRef}
                 />
-                <div className="overflow-hidden">
-                  <span className="text-[10px] font-[900] text-gray-400 uppercase tracking-[1px] mb-3 block">LOJAS:</span>
-                  <div ref={storesRef} className="flex items-center gap-2 sm:gap-4 overflow-x-auto no-scrollbar pb-2 cursor-grab select-none active:cursor-grabbing">
-                    {supermarketNames.map(store => {
-                      const storeData = stores.find(s => normalizeString(s.name) === normalizeString(store));
-                      return (
-                        <button 
-                          key={store} 
-                          onClick={() => setSelectedSupermarket(store)} 
-                          className={`flex-shrink-0 px-6 py-3 rounded-xl sm:rounded-[1.5rem] text-xs sm:text-[15px] font-[800] transition-all shadow-sm flex items-center space-x-3 ${selectedSupermarket === store ? 'bg-brand text-white shadow-xl shadow-brand/30 scale-105' : 'bg-white dark:bg-zinc-900 text-gray-600 dark:text-zinc-300 border border-gray-100 dark:border-zinc-800 hover:border-brand'}`}
-                        >
-                          {store !== 'Todos' && storeData?.logo && (
-                            <div className="w-5 h-5 sm:w-7 sm:h-7 bg-white rounded-lg p-0.5 flex-shrink-0 flex items-center justify-center shadow-sm">
-                              <img src={storeData.logo} className="w-full h-full object-contain" alt="" />
-                            </div>
-                          )}
-                          <span>{store}</span>
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
+                
+                <StoreFilter 
+                  supermarketNames={supermarketNames}
+                  stores={stores}
+                  selectedSupermarket={selectedSupermarket}
+                  onSupermarketChange={setSelectedSupermarket}
+                  title="LOJAS:"
+                  containerRef={storesRef}
+                />
               </div>
             </div>
             <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-12">{filteredProducts.slice((currentPage-1)*ITEMS_PER_PAGE, currentPage*ITEMS_PER_PAGE).map((p) => <ProductCard key={p.id} product={p} onAddToList={addToList} onToggleFavorite={toggleFavorite} isFavorite={favorites.includes(p.id)} storeLogo={stores.find(s => normalizeString(s.name) === normalizeString(p.supermarket))?.logo} user={user} />)}</div>
