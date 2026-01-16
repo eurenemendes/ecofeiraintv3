@@ -17,12 +17,12 @@ import { ScannerModal } from './components/ScannerModal.tsx';
 import { ClearButton } from './components/ui/ClearButton.tsx';
 import { FavoritesView } from './components/Favorites/FavoritesView.tsx';
 import { ConfirmModal } from './components/ui/ConfirmModal.tsx';
-import { SearchConfirmModal } from './components/ui/SearchConfirmModal.tsx'; // Se houver, caso contrário remover
 import { SearchButton } from './components/ui/SearchButton.tsx';
 import { InputClearButton } from './components/ui/InputClearButton.tsx';
 import { SearchInput } from './components/ui/SearchInput.tsx';
 import { ShoppingListView } from './components/ShoppingList/ShoppingListView.tsx';
 import { StoreMarquee } from './components/StoreMarquee.tsx';
+import { CategoryFilter } from './components/ui/CategoryFilter.tsx';
 import { auth, googleProvider, signInWithPopup, signOut, onAuthStateChanged, User, GoogleAuthProvider } from './services/firebase.ts';
 import { googleDriveService } from './services/googleDriveService.ts';
 
@@ -413,25 +413,15 @@ const StoreDetailView = ({ products, stores, searchQuery, setSearchQuery, select
                 </div>
               </div>
             </div>
-            <div className="overflow-hidden">
-              <span className="text-[10px] font-[900] text-gray-400 dark:text-zinc-500 uppercase tracking-[1px] mb-4 block">FILTRAR CATEGORIA:</span>
-              <div ref={storeCategoriesRef} className="flex items-center gap-2 sm:gap-4 overflow-x-auto no-scrollbar pb-2 cursor-grab select-none active:cursor-grabbing">
-                {categories.map(cat => {
-                  const hasCategoryInStore = cat === 'Todas' || products.some(p => normalizeString(p.supermarket) === normalizeString(currentStore.name) && p.category === cat);
-                  if (!hasCategoryInStore) return null;
-                  
-                  return (
-                    <button 
-                      key={cat} 
-                      onClick={() => setSelectedCategory(cat)} 
-                      className={`flex-shrink-0 px-8 sm:px-12 py-3 sm:py-5 rounded-xl sm:rounded-[1.8rem] text-xs sm:text-[15px] font-[800] transition-all shadow-sm ${selectedCategory === cat ? 'bg-brand text-white shadow-xl shadow-brand/30 scale-105' : 'bg-white dark:bg-zinc-900 text-gray-600 dark:text-zinc-300 border border-gray-100 dark:border-zinc-800 hover:border-brand'}`}
-                    >
-                      {cat}
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
+
+            <CategoryFilter 
+              categories={categories}
+              selectedCategory={selectedCategory}
+              onCategoryChange={setSelectedCategory}
+              title="FILTRAR CATEGORIA:"
+              containerRef={storeCategoriesRef}
+              categoryFilterFn={(cat) => cat === 'Todas' || products.some(p => normalizeString(p.supermarket) === normalizeString(currentStore.name) && p.category === cat)}
+            />
           </div>
           {paginatedStoreProducts.length > 0 ? (
             <>
@@ -886,7 +876,13 @@ const App: React.FC = () => {
                 </div>
               </div>
               <div className="space-y-6 sm:space-y-10">
-                <div className="overflow-hidden"><span className="text-[10px] font-[900] text-gray-400 uppercase tracking-[1px] mb-3 block">CATEGORIAS:</span><div ref={categoriesRef} className="flex items-center gap-2 sm:gap-4 overflow-x-auto no-scrollbar pb-2 cursor-grab select-none active:cursor-grabbing">{categories.map(cat => <button key={cat} onClick={() => setSelectedCategory(cat)} className={`flex-shrink-0 px-6 py-3 rounded-xl sm:rounded-[1.5rem] text-xs sm:text-[15px] font-[800] transition-all shadow-sm ${selectedCategory === cat ? 'bg-brand text-white shadow-xl shadow-brand/30 scale-105' : 'bg-white dark:bg-zinc-900 text-gray-600 dark:text-zinc-300 border border-gray-100 dark:border-zinc-800 hover:border-brand'}`}>{cat}</button>)}</div></div>
+                <CategoryFilter 
+                  categories={categories}
+                  selectedCategory={selectedCategory}
+                  onCategoryChange={setSelectedCategory}
+                  title="CATEGORIAS:"
+                  containerRef={categoriesRef}
+                />
                 <div className="overflow-hidden">
                   <span className="text-[10px] font-[900] text-gray-400 uppercase tracking-[1px] mb-3 block">LOJAS:</span>
                   <div ref={storesRef} className="flex items-center gap-2 sm:gap-4 overflow-x-auto no-scrollbar pb-2 cursor-grab select-none active:cursor-grabbing">
