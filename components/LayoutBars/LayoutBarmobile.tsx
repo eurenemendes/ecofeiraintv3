@@ -19,7 +19,7 @@ export const LayoutBarmobile: React.FC<LayoutBarmobileProps> = ({
   handleNav,
   toggleMenu
 }) => {
-  // Função auxiliar para navegar e rolar para o topo
+  // Função auxiliar para navegação padrão (com scroll para o topo)
   const onAction = (action: () => void) => {
     action();
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -92,9 +92,9 @@ export const LayoutBarmobile: React.FC<LayoutBarmobileProps> = ({
         <span className="text-[10px] font-black uppercase mt-1 tracking-tighter">Perfil</span>
       </button>
 
-      {/* Menu Lateral (Drawer) */}
+      {/* Menu Lateral (Drawer) - EXCLUSIVO: Sem scroll para o topo ao abrir o menu */}
       <button 
-        onClick={() => onAction(toggleMenu)} 
+        onClick={toggleMenu} 
         className="flex flex-col items-center py-2 px-1 rounded-2xl flex-1 text-gray-400 hover:text-brand hover:bg-gray-50 dark:hover:bg-zinc-900 transition-all duration-300"
       >
         <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M4 6h16M4 12h16M4 18h16" /></svg>
