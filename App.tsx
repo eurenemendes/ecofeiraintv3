@@ -24,6 +24,8 @@ import { ShoppingListView } from './components/ShoppingList/ShoppingListView.tsx
 import { StoreMarquee } from './components/StoreMarquee.tsx';
 import { CategoryFilter } from './components/ui/CategoryFilter.tsx';
 import { StoreFilter } from './components/ui/StoreFilter.tsx';
+import { PopularSuggestions } from './components/ui/PopularSuggestions.tsx';
+import { RecentSearches } from './components/ui/RecentSearches.tsx';
 import { auth, googleProvider, signInWithPopup, signOut, onAuthStateChanged, User, GoogleAuthProvider } from './services/firebase.ts';
 import { googleDriveService } from './services/googleDriveService.ts';
 
@@ -370,7 +372,7 @@ const StoreDetailView = ({ products, stores, searchQuery, setSearchQuery, select
                   />
                   <div className="flex items-center space-x-1 sm:space-x-2 pr-2 sm:pr-4">
                     <button onClick={() => onOpenScanner()} className="p-3 bg-gray-50 dark:bg-zinc-950 text-brand rounded-xl sm:rounded-2xl transition-all hover:scale-105 active:scale-95 border border-gray-100 dark:border-zinc-800">
-                      <svg className="w-5 h-5 sm:w-6 sm:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812-1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+                      <svg className="w-5 h-5 sm:w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812-1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
                     </button>
                     {searchQuery && <InputClearButton onClick={() => {setSearchQuery(''); setShowSearchSuggestions(false);}} size="sm" />}
                   </div>
@@ -410,7 +412,7 @@ const StoreDetailView = ({ products, stores, searchQuery, setSearchQuery, select
                   <option value="price-desc">Desconto %</option>
                 </select>
                 <div className="flex items-center bg-white dark:bg-zinc-900 p-3 sm:p-5 rounded-xl sm:rounded-[2rem] border border-gray-100 dark:border-zinc-700 shadow-sm group-hover:text-brand transition-all text-gray-400">
-                  <svg className="w-5 h-5 sm:w-6 sm:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" /></svg>
+                  <svg className="w-5 h-5 sm:w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" /></svg>
                 </div>
               </div>
             </div>
@@ -673,8 +675,14 @@ const App: React.FC = () => {
 
   const saveSearch = (term: string) => {
     if (!term.trim()) return;
-    setRecentSearches(prev => [term, ...prev.filter(s => s.toLowerCase() !== term.toLowerCase())].slice(0, 8));
+    // Capacidade limitada a 10 itens
+    setRecentSearches(prev => [term, ...prev.filter(s => s.toLowerCase() !== term.toLowerCase())].slice(0, 10));
   };
+
+  const removeRecentSearch = (term: string) => {
+    setRecentSearches(prev => prev.filter(s => s !== term));
+  };
+
   const handleSearchSubmit = (term: string) => { setSearchQuery(term); setShowSearchSuggestions(false); saveSearch(term); navigate('/produtos'); };
   
   const handleScanSuccess = (code: string): boolean => {
@@ -798,7 +806,7 @@ const App: React.FC = () => {
                   </div>
                   <div className="flex items-center justify-center sm:justify-end space-x-2 sm:space-x-4 px-2 pr-4">
                     <button onClick={() => setIsScannerOpen(true)} className="bg-black hover:bg-zinc-800 text-brand p-3 sm:p-6 rounded-full transition-all border border-zinc-800 shadow-sm hover:scale-105 active:scale-95 flex items-center justify-center aspect-square">
-                      <svg className="w-5 h-5 sm:w-7 sm:h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812-1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+                      <svg className="w-5 h-5 sm:w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812-1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
                     </button>
                     {searchQuery ? <InputClearButton onClick={() => {setSearchQuery(''); setShowSearchSuggestions(false);}} size="lg" /> : <SearchButton onClick={() => handleSearchSubmit(searchQuery)} />}
                   </div>
@@ -824,23 +832,13 @@ const App: React.FC = () => {
                             ))}
                           </>
                         )}
-                        {recentSearches.length > 0 && (
-                          <>
-                            <div className="p-3 sm:p-5 bg-gray-50/50 dark:bg-zinc-950/30 border-b border-gray-100 flex justify-between items-center">
-                              <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Buscas Recentes</span>
-                              <button onClick={() => setRecentSearches([])} className="text-[10px] font-black text-brand uppercase tracking-widest hover:text-brand-dark">Limpar</button>
-                            </div>
-                            {recentSearches.map((term: string, idx: number) => (
-                              <button key={idx} onClick={() => handleSearchSubmit(term)} className="w-full flex items-center justify-between p-4 sm:p-6 hover:bg-brand/5 border-b border-gray-50 dark:border-zinc-800/50 group text-left">
-                                <div className="flex items-center space-x-3 sm:space-x-4">
-                                  <div className="p-2 sm:p-2.5 rounded-lg bg-gray-100 dark:bg-zinc-800 text-gray-400"><svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg></div>
-                                  <span className="text-base sm:text-lg font-bold text-gray-700 dark:text-zinc-200 group-hover:text-brand">{term}</span>
-                                </div>
-                                <svg className="w-4 h-4 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M17 8l4 4m0 0l-4 4m4-4H3" /></svg>
-                              </button>
-                            ))}
-                          </>
-                        )}
+                        
+                        <RecentSearches 
+                          items={recentSearches} 
+                          onSelect={handleSearchSubmit} 
+                          onRemove={removeRecentSearch} 
+                          onClearAll={() => setRecentSearches([])}
+                        />
                       </div>
                     )}
                     {searchSuggestions.length > 0 && (
@@ -862,7 +860,11 @@ const App: React.FC = () => {
                   </div>
                 )}
               </div>
-              <div className="flex flex-wrap items-center justify-center gap-2 sm:gap-4"><span className="text-[10px] font-[900] text-gray-400 uppercase tracking-widest block w-full text-center sm:w-auto sm:mr-4">Populares</span>{popularSuggestions.map(tag => <button key={tag} onClick={() => {setSearchQuery(tag); handleSearchSubmit(tag);}} className="bg-white dark:bg-zinc-900 border border-gray-100 dark:border-zinc-800 px-4 py-2 rounded-lg text-xs sm:text-[15px] font-[800] text-gray-700 dark:text-zinc-300 hover:border-brand hover:text-brand transition-all">{tag}</button>)}</div>
+              
+              <PopularSuggestions 
+                suggestions={popularSuggestions} 
+                onSelect={(term) => handleSearchSubmit(term)} 
+              />
             </div>
             {mainBanners.length > 0 && <BannerCarousel banners={mainBanners} />}
           </div>
@@ -909,23 +911,13 @@ const App: React.FC = () => {
                               ))}
                             </>
                           )}
-                          {recentSearches.length > 0 && (
-                            <>
-                              <div className="p-3 sm:p-5 bg-gray-50/50 dark:bg-zinc-950/30 border-b border-gray-100 flex justify-between items-center">
-                                <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Buscas Recentes</span>
-                                <button onClick={() => setRecentSearches([])} className="text-[10px] font-black text-brand uppercase tracking-widest hover:text-brand-dark">Limpar</button>
-                              </div>
-                              {recentSearches.map((term: string, idx: number) => (
-                                <button key={idx} onClick={() => handleSearchSubmit(term)} className="w-full flex items-center justify-between p-4 sm:p-6 hover:bg-brand/5 border-b border-gray-50 dark:border-zinc-800/50 group text-left">
-                                  <div className="flex items-center space-x-3 sm:space-x-4">
-                                    <div className="p-2 sm:p-2.5 rounded-lg bg-gray-100 dark:bg-zinc-800 text-gray-400"><svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg></div>
-                                    <span className="text-base sm:text-lg font-bold text-gray-700 dark:text-zinc-200 group-hover:text-brand">{term}</span>
-                                  </div>
-                                  <svg className="w-4 h-4 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M17 8l4 4m0 0l-4 4m4-4H3" /></svg>
-                                </button>
-                              ))}
-                            </>
-                          )}
+                          
+                          <RecentSearches 
+                            items={recentSearches} 
+                            onSelect={handleSearchSubmit} 
+                            onRemove={removeRecentSearch} 
+                            onClearAll={() => setRecentSearches([])}
+                          />
                         </div>
                       )}
                       {searchSuggestions.length > 0 && (
@@ -949,7 +941,7 @@ const App: React.FC = () => {
                 </div>
                 <div className="flex-shrink-0 relative group">
                   <select value={sortBy} onChange={(e) => setSortBy(e.target.value as any)} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10" title="Ordenar por"><option value="none">Relevantes</option><option value="price-asc">Menor Preço</option><option value="price-desc">Desconto %</option></select>
-                  <div className="flex items-center bg-white dark:bg-zinc-900 p-3 sm:p-5 rounded-xl border border-gray-100 dark:border-zinc-800 shadow-sm transition-all group-hover:text-brand text-gray-400"><svg className="w-5 h-5 sm:w-6 sm:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" /></svg></div>
+                  <div className="flex items-center bg-white dark:bg-zinc-900 p-3 sm:p-5 rounded-xl border border-gray-100 dark:border-zinc-800 shadow-sm transition-all group-hover:text-brand text-gray-400"><svg className="w-5 h-5 sm:w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" /></svg></div>
                 </div>
               </div>
               <div className="space-y-6 sm:space-y-10">
