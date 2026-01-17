@@ -3,6 +3,7 @@ import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { Supermarket } from '../types';
 import { InputClearButton } from './ui/InputClearButton.tsx';
 import { SearchInput } from './ui/SearchInput.tsx';
+import { StoreListSuggestions } from './SearchSuggestions/StoreListSuggestions.tsx';
 
 interface LojasProps {
   stores: Supermarket[];
@@ -58,7 +59,7 @@ export const Lojas: React.FC<LojasProps> = ({ stores, onStoreClick, favoriteStor
         
         <div className="relative w-full lg:w-[450px] group" ref={suggestionRef}>
           <div className="absolute inset-0 bg-gray-100 dark:bg-gray-800/40 rounded-xl sm:rounded-[2.5rem] -m-1"></div>
-          <div className="relative flex items-center bg-white dark:bg-[#1e293b] rounded-xl sm:rounded-[2.5rem] border border-gray-100 dark:border-gray-700 shadow-sm transition-all focus-within:ring-4 focus-within:ring-brand/10">
+          <div className="relative h-full flex items-center bg-white dark:bg-[#1e293b] rounded-xl sm:rounded-[2.5rem] border border-gray-100 dark:border-gray-700 shadow-sm transition-all focus-within:ring-4 focus-within:ring-brand/10">
             <SearchInput 
               value={storeSearchQuery}
               onChange={(val) => {setStoreSearchQuery(val); setShowStoreSuggestions(true);}}
@@ -76,26 +77,10 @@ export const Lojas: React.FC<LojasProps> = ({ stores, onStoreClick, favoriteStor
           </div>
           
           {showStoreSuggestions && storeSuggestions.length > 0 && (
-            <div className="absolute top-full left-0 right-0 mt-4 bg-white dark:bg-[#1e293b] rounded-xl sm:rounded-[2rem] shadow-2xl border border-gray-100 dark:border-gray-800 overflow-hidden z-[200]">
-              <div className="p-3 bg-gray-50 dark:bg-[#0f172a] border-b border-gray-100 dark:border-gray-800">
-                <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Sugestões EcoFeira</span>
-              </div>
-              {storeSuggestions.map((s) => (
-                <button 
-                  key={s.id} 
-                  onClick={() => {setStoreSearchQuery(s.name); setShowStoreSuggestions(false); onStoreClick(s);}} 
-                  className="w-full flex items-center space-x-4 p-4 hover:bg-brand/5 border-b border-gray-50 dark:border-gray-800 last:border-none group text-left transition-colors"
-                >
-                  <div className="w-10 h-10 bg-white dark:bg-gray-800 rounded-lg flex items-center justify-center p-1.5 shadow-sm border border-gray-100 dark:border-gray-700 group-hover:scale-105 transition-transform">
-                    <img src={s.logo} alt={s.name} className="w-full h-full object-contain" />
-                  </div>
-                  <div>
-                    <p className="text-base font-black text-gray-900 dark:text-white leading-none">{s.name}</p>
-                    <p className="text-[10px] font-bold text-gray-400 mt-1">{s.neighborhood}</p>
-                  </div>
-                </button>
-              ))}
-            </div>
+            <StoreListSuggestions 
+              suggestions={storeSuggestions} 
+              onSelect={(store) => { setStoreSearchQuery(store.name); setShowStoreSuggestions(false); onStoreClick(store); }} 
+            />
           )}
         </div>
       </div>

@@ -24,6 +24,9 @@ import { ShoppingListView } from './components/ShoppingList/ShoppingListView.tsx
 import { StoreMarquee } from './components/StoreMarquee.tsx';
 import { CategoryFilter } from './components/ui/CategoryFilter.tsx';
 import { StoreFilter } from './components/ui/StoreFilter.tsx';
+import { HomeSearchSuggestions } from './components/SearchSuggestions/HomeSearchSuggestions.tsx';
+import { ProductSearchSuggestions } from './components/SearchSuggestions/ProductSearchSuggestions.tsx';
+import { StoreDetailSuggestions } from './components/SearchSuggestions/StoreDetailSuggestions.tsx';
 import { auth, googleProvider, signInWithPopup, signOut, onAuthStateChanged, User, GoogleAuthProvider } from './services/firebase.ts';
 import { googleDriveService } from './services/googleDriveService.ts';
 
@@ -274,14 +277,11 @@ const ProductDetailView = ({ products, stores, favorites, toggleFavorite, addToL
   );
 };
 
-const StoreDetailView = ({ products, stores, searchQuery, setSearchQuery, selectedCategory, setSelectedCategory, sortBy, setSortBy, favorites, toggleFavorite, addToList, showSearchSuggestions, setShowSearchSuggestions, searchSuggestionRef, storeCategoriesRef, categories, currentPage, setCurrentPage, onOpenScanner, user }: { products: Product[], stores: Supermarket[], searchQuery: string, setSearchQuery: (q: string) => void, selectedCategory: string, setSelectedCategory: (c: string) => void, sortBy: 'none' | 'price-asc' | 'price-desc', setSortBy: (s: 'none' | 'price-asc' | 'price-desc') => void, favorites: string[], toggleFavorite: (id: string) => void, addToList: (p: Product) => void, showSearchSuggestions: boolean, setShowSearchSuggestions: (b: boolean) => void, searchSuggestionRef: React.RefObject<HTMLDivElement | null>, storeCategoriesRef: React.RefObject<HTMLDivElement | null>, categories: string[], currentPage: number, setCurrentPage: (n: number) => void, onOpenScanner: () => void, user: User | null }) => {
+const StoreDetailView = ({ products, currentStore, searchQuery, setSearchQuery, selectedCategory, setSelectedCategory, sortBy, setSortBy, favorites, toggleFavorite, addToList, showSearchSuggestions, setShowSearchSuggestions, searchSuggestionRef, storeCategoriesRef, categories, currentPage, setCurrentPage, onOpenScanner, user }: { products: Product[], currentStore: Supermarket, searchQuery: string, setSearchQuery: (q: string) => void, selectedCategory: string, setSelectedCategory: (c: string) => void, sortBy: 'none' | 'price-asc' | 'price-desc', setSortBy: (s: 'none' | 'price-asc' | 'price-desc') => void, favorites: string[], toggleFavorite: (id: string) => void, addToList: (p: Product) => void, showSearchSuggestions: boolean, setShowSearchSuggestions: (b: boolean) => void, searchSuggestionRef: React.RefObject<HTMLDivElement | null>, storeCategoriesRef: React.RefObject<HTMLDivElement | null>, categories: string[], currentPage: number, setCurrentPage: (n: number) => void, onOpenScanner: () => void, user: User | null }) => {
   const navigate = useNavigate();
-  const { storeId } = useParams();
-  const currentStore = stores.find(s => s.id === storeId);
   const [isShared, setIsShared] = useState(false);
   
   const storeDetailProducts = useMemo(() => {
-    if (!currentStore) return [];
     const targetStoreName = normalizeString(currentStore.name);
     let result = products.filter(p => normalizeString(p.supermarket) === targetStoreName);
     
@@ -322,13 +322,11 @@ const StoreDetailView = ({ products, stores, searchQuery, setSearchQuery, select
   };
 
   const storeSearchSuggestions = useMemo(() => {
-    if (!currentStore || !searchQuery || searchQuery.length < 2) return [];
+    if (!searchQuery || searchQuery.length < 2) return [];
     const q = normalizeString(searchQuery);
     const targetStoreName = normalizeString(currentStore.name);
     return products.filter(p => normalizeString(p.supermarket) === targetStoreName && normalizeString(p.name).includes(q)).map(p => ({ label: p.name, type: 'produto' })).slice(0, 8);
   }, [products, searchQuery, currentStore]);
-
-  if (!currentStore) return <NotFoundState title="Supermercado não encontrado" message="Não conseguimos localizar este parceiro." buttonText="Ver todos os parceiros" onAction={() => navigate('/supermercados')} />;
 
   return (
     <div className="space-y-12 sm:space-y-16 animate-in fade-in slide-in-from-bottom-6 duration-700">
@@ -376,26 +374,11 @@ const StoreDetailView = ({ products, stores, searchQuery, setSearchQuery, select
                   </div>
                 </div>
                 {showSearchSuggestions && storeSearchSuggestions.length > 0 && (
-                  <div className="absolute top-full left-0 right-0 mt-4 bg-white/95 dark:bg-zinc-900/95 backdrop-blur-md rounded-2xl sm:rounded-[2.5rem] shadow-2xl border border-gray-100 dark:border-zinc-800 overflow-hidden z-[200]">
-                    <div className="p-3 sm:p-5 bg-gray-50/50 dark:bg-zinc-950/30 border-b border-gray-100 dark:border-zinc-800">
-                      <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Ofertas no {currentStore.name}</span>
-                    </div>
-                    {storeSearchSuggestions.map((s, idx) => (
-                      <button 
-                        key={idx} 
-                        onClick={() => {setSearchQuery(s.label); setShowSearchSuggestions(false);}} 
-                        className="w-full flex items-center justify-between p-4 sm:p-6 hover:bg-brand/5 transition-colors border-b border-gray-50 dark:border-zinc-800/50 last:border-none group text-left"
-                      >
-                        <div className="flex items-center space-x-3 sm:space-x-4">
-                          <div className={`p-2 rounded-lg sm:p-2.5 sm:rounded-xl bg-brand/10 text-brand`}>
-                            <svg className="w-4 h-4 sm:w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" /></svg>
-                          </div>
-                          <span className="text-base sm:text-lg font-bold text-gray-700 dark:text-zinc-200 group-hover:text-brand">{s.label}</span>
-                        </div>
-                        <span className="text-[10px] font-black text-gray-400 uppercase">{s.type}</span>
-                      </button>
-                    ))}
-                  </div>
+                  <StoreDetailSuggestions 
+                    storeName={currentStore.name} 
+                    suggestions={storeSearchSuggestions} 
+                    onSelect={(term) => { setSearchQuery(term); setShowSearchSuggestions(false); }} 
+                  />
                 )}
               </div>
               <div className="flex-shrink-0 relative group">
@@ -804,45 +787,15 @@ const App: React.FC = () => {
                   </div>
                 </div>
                 {showSearchSuggestions && (
-                  <div className="absolute top-full left-0 right-0 mt-4 bg-white/95 dark:bg-zinc-900/95 backdrop-blur-md rounded-2xl sm:rounded-[2.5rem] shadow-2xl border border-gray-100 dark:border-zinc-800 overflow-hidden z-[200]">
-                    {searchQuery.length === 0 && (recentSearches.length > 0 || scannedHistory.length > 0) && (
-                      <div className="animate-in fade-in duration-300">
-                        {scannedHistory.length > 0 && (
-                          <>
-                            <div className="p-3 sm:p-5 bg-gray-50/50 dark:bg-zinc-950/30 border-b border-gray-100 flex justify-between items-center">
-                              <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Códigos Escaneados</span>
-                              <button onClick={() => setScannedHistory([])} className="text-[10px] font-black text-brand uppercase tracking-widest hover:text-brand-dark">Limpar</button>
-                            </div>
-                            {scannedHistory.map((code: string, idx: number) => (
-                              <button key={idx} onClick={() => handleSearchSubmit(code)} className="w-full flex items-center justify-between p-4 sm:p-6 hover:bg-brand/5 border-b border-gray-50 dark:border-zinc-800/50 group text-left">
-                                <div className="flex items-center space-x-3 sm:space-x-4">
-                                  <div className="p-2 sm:p-2.5 rounded-lg bg-brand/5 text-brand"><svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M12 4v1l-3 3h6l-3-3V4zM4 10h16v10H4V10z" /></svg></div>
-                                  <span className="text-base sm:text-lg font-bold text-gray-700 dark:text-zinc-200 group-hover:text-brand">{code}</span>
-                                </div>
-                                <span className="text-[10px] font-black text-gray-400 uppercase">Código</span>
-                              </button>
-                            ))}
-                          </>
-                        )}
-                      </div>
-                    )}
-                    {searchSuggestions.length > 0 && (
-                      <div className="animate-in fade-in duration-300">
-                        <div className="p-3 sm:p-5 bg-gray-50/50 dark:bg-zinc-950/30 border-b border-gray-100"><span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Sugestões EcoFeira</span></div>
-                        {searchSuggestions.map((s: {label: string, type: string}, idx: number) => (
-                          <button key={idx} onClick={() => handleSearchSubmit(s.label)} className="w-full flex items-center justify-between p-4 sm:p-6 hover:bg-brand/5 border-b border-gray-50 dark:border-zinc-800/50 last:border-none group text-left text-gray-700 dark:text-zinc-200">
-                            <div className="flex items-center space-x-3 sm:space-x-4">
-                              <div className={`p-2 rounded-lg ${s.type === 'categoria' ? 'bg-zinc-100 dark:bg-zinc-800 text-brand' : 'bg-brand/10 text-brand'}`}>
-                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" /></svg>
-                              </div>
-                              <span className="text-base sm:text-lg font-bold group-hover:text-brand">{s.label}</span>
-                            </div>
-                            <span className="text-[10px] font-black uppercase">{s.type}</span>
-                          </button>
-                        ))}
-                      </div>
-                    )}
-                  </div>
+                  <HomeSearchSuggestions 
+                    searchQuery={searchQuery}
+                    recentSearches={recentSearches}
+                    scannedHistory={scannedHistory}
+                    suggestions={searchSuggestions}
+                    onSelect={handleSearchSubmit}
+                    onClearScanned={() => setScannedHistory([])}
+                    onClearRecent={() => setRecentSearches([])}
+                  />
                 )}
               </div>
               <div className="flex flex-wrap items-center justify-center gap-2 sm:gap-4"><span className="text-[10px] font-[900] text-gray-400 uppercase tracking-widest block w-full text-center sm:w-auto sm:mr-4">Populares</span>{popularSuggestions.map(tag => <button key={tag} onClick={() => {setSearchQuery(tag); handleSearchSubmit(tag);}} className="bg-white dark:bg-zinc-900 border border-gray-100 dark:border-zinc-800 px-4 py-2 rounded-lg text-xs sm:text-[15px] font-[800] text-gray-700 dark:text-zinc-300 hover:border-brand hover:text-brand transition-all">{tag}</button>)}</div>
@@ -870,6 +823,17 @@ const App: React.FC = () => {
                       {searchQuery && <InputClearButton onClick={() => {setSearchQuery(''); setShowSearchSuggestions(false);}} size="md" />}
                     </div>
                   </div>
+                  {showSearchSuggestions && (
+                    <ProductSearchSuggestions 
+                      searchQuery={searchQuery}
+                      recentSearches={recentSearches}
+                      scannedHistory={scannedHistory}
+                      suggestions={searchSuggestions}
+                      onSelect={handleSearchSubmit}
+                      onClearScanned={() => setScannedHistory([])}
+                      onClearRecent={() => setRecentSearches([])}
+                    />
+                  )}
                 </div>
                 <div className="flex-shrink-0 relative group">
                   <select value={sortBy} onChange={(e) => setSortBy(e.target.value as any)} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10" title="Ordenar por"><option value="none">Relevantes</option><option value="price-asc">Menor Preço</option><option value="price-desc">Desconto %</option></select>
@@ -902,7 +866,12 @@ const App: React.FC = () => {
         <Route path="/supermercados" element={<Lojas stores={stores} onStoreClick={openStoreDetail} favoriteStores={favoriteStores} onToggleFavoriteStore={toggleFavoriteStore} />} />
         <Route path="/perfil" element={<ProfileView user={user} favoritesCount={favorites.length + favoriteStores.length} shoppingListCount={shoppingList.length} onLogout={handleLogout} onLogin={handleLogin} />} />
         <Route path="/perfil/backup" element={<BackupView user={user} />} />
-        <Route path="/supermercado/:storeId" element={<StoreDetailView products={products} stores={stores} searchQuery={searchQuery} setSearchQuery={setSearchQuery} selectedCategory={selectedCategory} setSelectedCategory={setSelectedCategory} sortBy={sortBy} setSortBy={setSortBy} favorites={favorites} toggleFavorite={toggleFavorite} addToList={addToList} showSearchSuggestions={showSearchSuggestions} setShowSearchSuggestions={setShowSearchSuggestions} searchSuggestionRef={searchSuggestionRef} storeCategoriesRef={storeCategoriesRef} categories={categories} currentPage={currentPage} setCurrentPage={setCurrentPage} onOpenScanner={() => setIsScannerOpen(true)} user={user} />} />
+        <Route path="/supermercado/:storeId" element={(() => {
+          const { storeId } = useParams();
+          const currentStore = stores.find(s => s.id === storeId);
+          if (!currentStore) return <NotFoundState title="Supermercado não encontrado" message="Não conseguimos localizar este parceiro." buttonText="Ver todos os parceiros" onAction={() => navigate('/supermercados')} />;
+          return <StoreDetailView products={products} currentStore={currentStore} searchQuery={searchQuery} setSearchQuery={setSearchQuery} selectedCategory={selectedCategory} setSelectedCategory={setSelectedCategory} sortBy={sortBy} setSortBy={setSortBy} favorites={favorites} toggleFavorite={toggleFavorite} addToList={addToList} showSearchSuggestions={showSearchSuggestions} setShowSearchSuggestions={setShowSearchSuggestions} searchSuggestionRef={searchSuggestionRef} storeCategoriesRef={storeCategoriesRef} categories={categories} currentPage={currentPage} setCurrentPage={setCurrentPage} onOpenScanner={() => setIsScannerOpen(true)} user={user} />;
+        })()} />
         <Route path="/:storeName/:categoryName/:productId/:productName" element={<ProductDetailView products={products} stores={stores} favorites={favorites} toggleFavorite={toggleFavorite} addToList={addToList} />} />
         <Route path="/favoritos" element={<FavoritesView favorites={favorites} favoritedProducts={favoritedProducts} favoriteStores={favoriteStores} stores={stores} user={user} onAddToList={addToList} onToggleFavorite={toggleFavorite} onToggleFavoriteStore={toggleFavoriteStore} onClearClick={handleClearFavorites} onStoreClick={openStoreDetail} />} />
         <Route path="/lista" element={<ShoppingListView shoppingList={shoppingList} products={products} stores={stores} onUpdateQuantity={updateQuantity} onRemoveFromList={removeFromList} onClearClick={() => setIsClearListModalOpen(true)} />} />
