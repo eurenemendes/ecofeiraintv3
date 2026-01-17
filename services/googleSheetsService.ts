@@ -1,7 +1,8 @@
 
 import { Product, Supermarket, MainBanner, GridBanner } from '../types';
 
-const BASE_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRU-bOKDig64F2nxlQDfkkcGSk9lRfxJsE31SeGbHa0q8qHW1WQO963zpfbbFaBhkuGScJsEuvIoZ8D/pubhtml';
+// A URL agora é consumida do ambiente, com um fallback de segurança caso a variável não esteja definida.
+const BASE_URL = process.env.SHEETS_BASE_URL || 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRU-bOKDig64F2nxlQDfkkcGSk9lRfxJsE31SeGbHa0q8qHW1WQO963zpfbbFaBhkuGScJsEuvIoZ8D/pubhtml';
 
 async function fetchSheetData(gid: string): Promise<string[][]> {
   try {
@@ -45,7 +46,6 @@ export const getProducts = async (): Promise<Product[]> => {
     const promoPrice = parseFloat(row[6]?.replace(',', '.')) || 0;
     const normalPrice = parseFloat(row[4]?.replace(',', '.')) || 0;
 
-    // Novas colunas conforme solicitado
     const additionalImages = [row[9], row[10]].filter(img => img && img.startsWith('http'));
 
     return {
@@ -106,6 +106,5 @@ export const getGridBanners = async (): Promise<GridBanner[]> => {
 
 export const getPopularSuggestions = async (): Promise<string[]> => {
   const data = await fetchSheetData('261612517');
-  // Mapeia apenas a primeira coluna que contém os termos de busca
   return data.map(row => row[0]).filter(term => term && term.length > 0);
 };

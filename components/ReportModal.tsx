@@ -1,8 +1,7 @@
 
-import React, { useRef } from 'react';
+import React, { useState } from 'react';
 import { Product } from '../types';
 import { User } from '../services/firebase';
-import { slugify } from '../App';
 
 interface ReportModalProps {
   isOpen: boolean;
@@ -11,61 +10,69 @@ interface ReportModalProps {
   user: User | null;
 }
 
+type ReportReason = 'PRECO_ERRADO' | 'IMAGEM_ERRADA' | 'PRODUTO_FORA_ESTOQUE' | 'DADOS_INCORRETOS' | 'OUTRO';
+
 export const ReportModal: React.FC<ReportModalProps> = ({ isOpen, onClose, product, user }) => {
-  const iframeRef = useRef<HTMLIFrameElement>(null);
+  const [reason, setReason] = useState<ReportReason | ''>('');
+  const [comment, setComment] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isSuccess, setIsSuccess] = useState(false);
 
   if (!isOpen) return null;
 
-  const currentPrice = product.isPromo ? product.promoPrice : product.normalPrice;
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!reason) return;
 
-  const getItemUrl = () => {
-    const baseUrl = window.location.href.split('#')[0].replace(/\/$/, "");
-    const storeSlug = slugify(product.supermarket);
-    const categorySlug = slugify(product.category);
-    const nameSlug = slugify(product.name);
-    return `${baseUrl}/#/${storeSlug}/${categorySlug}/${product.id}/${nameSlug}`;
+    setIsSubmitting(true);
+
+    // Simulando envio para um serviço de coleta de dados
+    const reportData = {
+      product: {
+        id: product.id,
+        name: product.name,
+        supermarket: product.supermarket,
+      },
+      reporter: {
+        name: user?.displayName || 'Anônimo',
+        uid: user?.uid || 'N/A',
+        email: user?.email || 'N/A',
+      },
+      issue: {
+        reason,
+        comment,
+        timestamp: new Date().toISOString(),
+      }
+    };
+
+    console.log("🚀 Enviando Reporte:", reportData);
+
+    // Simula latência de rede
+    await new Promise(resolve => setTimeout(resolve, 1500));
+    
+    setIsSubmitting(false);
+    setIsSuccess(true);
   };
 
-  const handleIframeLoad = () => {
-    if (iframeRef.current) {
-      const itemUrl = getItemUrl();
-      const reportData = {
-        userName: user?.displayName || 'Anônimo (Não logado)',
-        userId: user?.uid || 'N/A',
-        itemId: product.id,
-        itemUrl: itemUrl,
-        timestamp: new Date().toISOString(),
-        productName: product.name,
-        supermarket: product.supermarket
-      };
-
-      console.group("🚀 EcoFeira - Sistema de Reporte Componentizado");
-      console.log("%c[Status] Enviando dados via postMessage", "color: #10b981; font-weight: bold;");
-      console.table(reportData);
-      console.groupEnd();
-
-      // Enviando para o iframe
-      iframeRef.current.contentWindow?.postMessage({
-        type: 'ECOFEIRA_REPORT_DATA',
-        ...reportData
-      }, '*');
-    }
+  const handleClose = () => {
+    setReason('');
+    setComment('');
+    setIsSuccess(false);
+    onClose();
   };
 
   const fallbackImage = "https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&q=60&w=300";
 
   return (
-    <div 
-      className="fixed inset-0 z-[500] flex items-center justify-center p-4 sm:p-6"
-      onClick={(e) => e.stopPropagation()}
-    >
+    <div className="fixed inset-0 z-[500] flex items-center justify-center p-4 sm:p-6">
       <div 
         className="absolute inset-0 bg-[#0f172a]/90 backdrop-blur-md animate-in fade-in duration-300"
-        onClick={onClose}
+        onClick={handleClose}
       ></div>
-      <div className="relative bg-white dark:bg-[#1e293b] w-full max-w-2xl rounded-[2.5rem] shadow-2xl overflow-hidden animate-in zoom-in-95 duration-300 flex flex-col max-h-[90vh] border border-gray-100 dark:border-gray-800">
+      
+      <div className="relative bg-white dark:bg-[#1e293b] w-full max-w-xl rounded-[2.5rem] shadow-2xl overflow-hidden animate-in zoom-in-95 duration-300 flex flex-col border border-gray-100 dark:border-gray-800">
         
-        {/* Header do Modal */}
+        {/* Header */}
         <div className="p-6 sm:p-8 border-b border-gray-100 dark:border-gray-800 flex items-center justify-between bg-white/50 dark:bg-[#1e293b]/50 backdrop-blur-xl">
           <div className="flex items-center space-x-4">
             <div className="w-12 h-12 bg-red-50 dark:bg-red-500/10 rounded-xl flex items-center justify-center text-red-500 border border-red-100 dark:border-red-900/30">
@@ -75,11 +82,11 @@ export const ReportModal: React.FC<ReportModalProps> = ({ isOpen, onClose, produ
             </div>
             <div>
               <h3 className="text-xl font-black text-[#111827] dark:text-white tracking-tighter">Reportar Item</h3>
-              <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mt-0.5">Informe erros de preço ou imagem</p>
+              <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mt-0.5">Colabore com a comunidade</p>
             </div>
           </div>
           <button 
-            onClick={onClose} 
+            onClick={handleClose} 
             className="p-3 bg-gray-50 dark:bg-[#0f172a] text-gray-400 hover:text-red-500 rounded-2xl transition-all border border-gray-100 dark:border-gray-800"
           >
             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -87,40 +94,90 @@ export const ReportModal: React.FC<ReportModalProps> = ({ isOpen, onClose, produ
             </svg>
           </button>
         </div>
-        
-        {/* Corpo do Modal */}
-        <div className="flex-grow overflow-y-auto custom-scrollbar p-6 sm:p-8 space-y-6">
-          {/* Previsualização rápida do produto */}
-          <div className="bg-[#f8fafc] dark:bg-[#0f172a]/50 rounded-2xl p-4 flex items-center space-x-4 border border-gray-100 dark:border-gray-800">
-            <div className="w-20 h-20 bg-white dark:bg-gray-800 rounded-xl p-2 border border-gray-100 dark:border-gray-700 flex-shrink-0">
-              <img 
-                src={product.imageUrl || fallbackImage} 
-                className="w-full h-full object-contain pointer-events-none" 
-                alt={product.name}
-              />
+
+        <div className="p-6 sm:p-8 overflow-y-auto max-h-[70vh] custom-scrollbar">
+          {isSuccess ? (
+            <div className="py-12 flex flex-col items-center text-center space-y-6 animate-in zoom-in-95 duration-500">
+              <div className="w-24 h-24 bg-emerald-500 rounded-full flex items-center justify-center text-white shadow-xl shadow-emerald-500/20 animate-success-pop">
+                <svg className="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="4" d="M5 13l4 4L19 7" />
+                </svg>
+              </div>
+              <div className="space-y-2">
+                <h4 className="text-3xl font-[1000] text-gray-900 dark:text-white tracking-tighter">Reporte Enviado!</h4>
+                <p className="text-gray-500 dark:text-gray-400 font-bold max-w-xs">Obrigado por ajudar a manter o EcoFeira atualizado para todos.</p>
+              </div>
+              <button 
+                onClick={handleClose}
+                className="bg-brand text-white font-black px-12 py-5 rounded-2xl shadow-xl shadow-brand/20 hover:scale-105 active:scale-95 transition-all uppercase text-xs tracking-widest"
+              >
+                Concluir
+              </button>
             </div>
-            <div>
-              <p className="text-[10px] font-black text-brand uppercase tracking-widest leading-none mb-1">{product.category}</p>
-              <p className="font-extrabold text-gray-900 dark:text-white line-clamp-1 leading-tight">{product.name}</p>
-              <p className="text-xl font-black text-gray-900 dark:text-white mt-1 tracking-tighter">R$ {currentPrice.toFixed(2).replace('.', ',')}</p>
-            </div>
-          </div>
-          
-          {/* Iframe do Formulário */}
-          <div className="relative aspect-[4/5] sm:aspect-[3/4] w-full rounded-2xl overflow-hidden border border-gray-100 dark:border-gray-800 bg-white shadow-inner">
-            <iframe 
-              ref={iframeRef}
-              onLoad={handleIframeLoad}
-              src="https://formsheets.vercel.app" 
-              className="w-full h-full border-none"
-              title="Formulário de Reporte"
-            ></iframe>
-          </div>
+          ) : (
+            <form onSubmit={handleSubmit} className="space-y-6">
+              {/* Product Preview */}
+              <div className="bg-[#f8fafc] dark:bg-[#0f172a]/50 rounded-2xl p-4 flex items-center space-x-4 border border-gray-100 dark:border-gray-800">
+                <div className="w-16 h-16 bg-white dark:bg-gray-800 rounded-xl p-2 border border-gray-100 dark:border-gray-700 flex-shrink-0">
+                  <img src={product.imageUrl || fallbackImage} className="w-full h-full object-contain" alt="" />
+                </div>
+                <div className="min-w-0">
+                  <p className="text-[9px] font-black text-brand uppercase tracking-widest leading-none mb-1">{product.supermarket}</p>
+                  <p className="font-extrabold text-gray-900 dark:text-white truncate text-sm">{product.name}</p>
+                </div>
+              </div>
+
+              <div className="space-y-4">
+                <label className="block">
+                  <span className="text-[10px] font-black text-gray-400 dark:text-zinc-500 uppercase tracking-widest ml-1">Motivo do Reporte</span>
+                  <select 
+                    required
+                    value={reason}
+                    onChange={(e) => setReason(e.target.value as ReportReason)}
+                    className="mt-2 w-full bg-gray-50 dark:bg-zinc-950 border border-gray-100 dark:border-gray-800 rounded-2xl p-4 text-sm font-bold text-gray-700 dark:text-gray-200 outline-none focus:ring-2 focus:ring-brand/20 transition-all appearance-none cursor-pointer"
+                  >
+                    <option value="" disabled>Selecione uma opção...</option>
+                    <option value="PRECO_ERRADO">O preço está incorreto</option>
+                    <option value="IMAGEM_ERRADA">A imagem não corresponde</option>
+                    <option value="PRODUTO_FORA_ESTOQUE">Produto está em falta na loja</option>
+                    <option value="DADOS_INCORRETOS">Nome ou categoria errados</option>
+                    <option value="OUTRO">Outro problema</option>
+                  </select>
+                </label>
+
+                <label className="block">
+                  <span className="text-[10px] font-black text-gray-400 dark:text-zinc-500 uppercase tracking-widest ml-1">Detalhes adicionais (Opcional)</span>
+                  <textarea 
+                    value={comment}
+                    onChange={(e) => setComment(e.target.value)}
+                    placeholder="Descreva o erro para nos ajudar a corrigir..."
+                    className="mt-2 w-full bg-gray-50 dark:bg-zinc-950 border border-gray-100 dark:border-gray-800 rounded-2xl p-4 text-sm font-bold text-gray-700 dark:text-gray-200 outline-none focus:ring-2 focus:ring-brand/20 transition-all min-h-[120px] resize-none"
+                  />
+                </label>
+              </div>
+
+              <button 
+                type="submit"
+                disabled={isSubmitting || !reason}
+                className={`w-full py-6 rounded-[1.5rem] font-black text-sm uppercase tracking-widest transition-all shadow-xl flex items-center justify-center space-x-3 ${isSubmitting ? 'bg-gray-100 text-gray-400 cursor-not-allowed' : 'bg-brand text-white shadow-brand/20 hover:scale-[1.02] active:scale-95'}`}
+              >
+                {isSubmitting ? (
+                  <div className="w-5 h-5 border-4 border-gray-300 border-t-brand rounded-full animate-spin"></div>
+                ) : (
+                  <>
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
+                    </svg>
+                    <span>Enviar Reporte</span>
+                  </>
+                )}
+              </button>
+            </form>
+          )}
         </div>
-        
-        {/* Footer do Modal */}
+
         <div className="p-4 bg-gray-50/50 dark:bg-[#0f172a]/50 text-center border-t border-gray-100 dark:border-gray-800">
-          <p className="text-[10px] font-bold text-gray-400 uppercase tracking-[2px]">Agradecemos sua ajuda para melhorar o EcoFeira</p>
+          <p className="text-[9px] font-bold text-gray-400 dark:text-zinc-600 uppercase tracking-[2px]">Dados de rastreamento: #{product.id.slice(0, 8)}</p>
         </div>
       </div>
     </div>
