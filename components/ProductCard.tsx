@@ -7,6 +7,7 @@ import { Product } from '../types';
 import { slugify } from '../App';
 import { User } from '../services/firebase';
 import { ReportModal } from './ReportModal.tsx';
+import { Tooltip } from './ui/Tooltip.tsx';
 
 interface ProductCardProps {
   product: Product;
@@ -76,27 +77,32 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, onAddToList, 
     <>
       <div 
         onClick={handleCardClick}
-        className="bg-white dark:bg-[#1e293b] rounded-2xl sm:rounded-[2.5rem] shadow-[0_4px_12px_rgba(0,0,0,0.04)] sm:shadow-[0_4px_20px_rgba(0,0,0,0.04)] hover:shadow-[0_20px_60px_rgba(0,0,0,0.1)] transition-all duration-500 overflow-hidden border border-gray-100 dark:border-gray-800 flex flex-col group relative h-full cursor-pointer"
+        className="bg-white dark:bg-[#1e293b] rounded-2xl sm:rounded-[2.5rem] shadow-[0_4px_12px_rgba(0,0,0,0.04)] sm:shadow-[0_4px_20px_rgba(0,0,0,0.04)] hover:shadow-[0_20px_60px_rgba(0,0,0,0.1)] transition-all duration-500 border border-gray-100 dark:border-gray-800 flex flex-col group relative h-full cursor-pointer"
       >
-        <div className="relative pt-[85%] bg-[#f4f7f6] dark:bg-[#0f172a]/60 m-1 sm:m-2 rounded-xl sm:rounded-[2rem] overflow-hidden">
-          {!imageLoaded && !imageError && (
-            <div className="absolute inset-0 bg-gray-200 dark:bg-gray-800 animate-pulse flex items-center justify-center">
-              <svg className="w-10 h-10 text-gray-300 dark:text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-              </svg>
-            </div>
-          )}
+        {/* Container da Imagem: overflow-visible para permitir que tooltips apareçam sem cortes */}
+        <div className="relative pt-[85%] bg-[#f4f7f6] dark:bg-[#0f172a]/60 m-1 sm:m-2 rounded-xl sm:rounded-[2rem] overflow-visible">
+          
+          {/* Sub-container da Imagem com overflow-hidden para o efeito de zoom ser contido */}
+          <div className="absolute inset-0 rounded-xl sm:rounded-[2rem] overflow-hidden">
+            {!imageLoaded && !imageError && (
+              <div className="absolute inset-0 bg-gray-200 dark:bg-gray-800 animate-pulse flex items-center justify-center">
+                <svg className="w-10 h-10 text-gray-300 dark:text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                </svg>
+              </div>
+            )}
 
-          <img 
-            src={imageError ? fallbackImage : product.imageUrl} 
-            alt={product.name}
-            onLoad={() => setImageLoaded(true)}
-            onError={() => { setImageError(true); setImageLoaded(true); }}
-            className={`absolute inset-0 w-full h-full object-contain p-4 sm:p-8 transition-all duration-700 group-hover:scale-110 pointer-events-none select-none ${imageLoaded ? 'opacity-100 scale-100' : 'opacity-0 scale-95'}`}
-            loading="lazy"
-            draggable={false}
-            onContextMenu={(e) => e.preventDefault()}
-          />
+            <img 
+              src={imageError ? fallbackImage : product.imageUrl} 
+              alt={product.name}
+              onLoad={() => setImageLoaded(true)}
+              onError={() => { setImageError(true); setImageLoaded(true); }}
+              className={`absolute inset-0 w-full h-full object-contain p-4 sm:p-8 transition-all duration-700 group-hover:scale-110 pointer-events-none select-none ${imageLoaded ? 'opacity-100 scale-100' : 'opacity-0 scale-95'}`}
+              loading="lazy"
+              draggable={false}
+              onContextMenu={(e) => e.preventDefault()}
+            />
+          </div>
           
           {product.isPromo && discount > 0 && (
             <div className="absolute top-2 left-2 sm:top-4 sm:left-4 bg-red-500 text-white text-[8px] sm:text-[10px] font-black px-2 py-1 sm:px-3 sm:py-1.5 rounded-lg sm:rounded-xl shadow-lg shadow-red-500/30 z-20">
@@ -104,48 +110,55 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, onAddToList, 
             </div>
           )}
 
-          <div className="absolute top-2 right-2 sm:top-4 sm:right-4 flex flex-col space-y-2 z-20">
-            <button 
-              onClick={(e) => {
-                e.stopPropagation();
-                onToggleFavorite(product.id);
-              }}
-              className={`p-1.5 sm:p-2.5 rounded-lg sm:rounded-2xl shadow-lg transition-all hover:scale-110 active:scale-90 ${isFavorite ? 'bg-red-500 text-white shadow-red-500/30' : 'bg-white/80 dark:bg-gray-800/80 text-gray-400 backdrop-blur-md'}`}
-            >
-              <svg className={`w-4 h-4 sm:w-5 h-5 ${isFavorite ? 'fill-current' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
-              </svg>
-            </button>
+          {/* Botões de Ação Superiores */}
+          <div className="absolute top-2 right-2 sm:top-4 sm:right-4 flex flex-col space-y-2 z-[60]">
+            <Tooltip content={isFavorite ? "Remover" : "Favoritar"} position="bottom-left">
+              <button 
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onToggleFavorite(product.id);
+                }}
+                className={`p-1.5 sm:p-2.5 rounded-lg sm:rounded-2xl shadow-lg transition-all hover:scale-110 active:scale-90 ${isFavorite ? 'bg-red-500 text-white shadow-red-500/30' : 'bg-white/80 dark:bg-gray-800/80 text-gray-400 backdrop-blur-md border border-white/20 dark:border-gray-700/50'}`}
+              >
+                <svg className={`w-4 h-4 sm:w-5 h-5 ${isFavorite ? 'fill-current' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+                </svg>
+              </button>
+            </Tooltip>
 
-            <button 
-              onClick={handleShare}
-              className={`p-1.5 sm:p-2.5 rounded-lg sm:rounded-2xl shadow-lg transition-all hover:scale-110 active:scale-90 backdrop-blur-md relative ${isShared ? 'bg-brand text-white' : 'bg-white/80 dark:bg-gray-800/80 text-gray-400'}`}
-            >
-              {isShared ? (
-                <svg className="w-4 h-4 sm:w-5 h-5 animate-success-pop" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7" />
-                </svg>
-              ) : (
-                <svg className="w-4 h-4 sm:w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
-                </svg>
-              )}
-            </button>
+            <Tooltip content="Compartilhar" position="bottom-left">
+              <button 
+                onClick={handleShare}
+                className={`p-1.5 sm:p-2.5 rounded-lg sm:rounded-2xl shadow-lg transition-all hover:scale-110 active:scale-90 backdrop-blur-md relative border border-white/20 dark:border-gray-700/50 ${isShared ? 'bg-brand text-white' : 'bg-white/80 dark:bg-gray-800/80 text-gray-400'}`}
+              >
+                {isShared ? (
+                  <svg className="w-4 h-4 sm:w-5 h-5 animate-success-pop" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7" />
+                  </svg>
+                ) : (
+                  <svg className="w-4 h-4 sm:w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
+                  </svg>
+                )}
+              </button>
+            </Tooltip>
           </div>
 
-          <div className="absolute bottom-2 right-2 sm:bottom-4 sm:right-4 z-20">
-            <button 
-              onClick={(e) => {
-                e.stopPropagation();
-                setIsReportModalOpen(true);
-              }}
-              className="p-1.5 sm:p-2.5 rounded-lg sm:rounded-2xl shadow-lg transition-all hover:scale-110 active:scale-90 bg-white/80 dark:bg-gray-800/80 text-gray-400 backdrop-blur-md border border-gray-100/50 dark:border-gray-700/50"
-              title="Reportar item"
-            >
-              <svg className="w-4 h-4 sm:w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M3 21v-4m0 0V5a2 2 0 012-2h6.5l1 1H21l-3 6 3 6h-8.5l-1-1H5a2 2 0 00-2 2zm9-13.5V9" />
-              </svg>
-            </button>
+          {/* Botão de Reportar - z-[60] superior para evitar sobreposição */}
+          <div className="absolute bottom-2 right-2 sm:bottom-4 sm:right-4 z-[60]">
+            <Tooltip content="Reportar Erro" position="bottom-left">
+              <button 
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setIsReportModalOpen(true);
+                }}
+                className="p-1.5 sm:p-2.5 rounded-lg sm:rounded-2xl shadow-lg transition-all hover:scale-110 active:scale-90 bg-white/80 dark:bg-gray-800/80 text-gray-400 backdrop-blur-md border border-white/20 dark:border-gray-700/50"
+              >
+                <svg className="w-4 h-4 sm:w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M3 21v-4m0 0V5a2 2 0 012-2h6.5l1 1H21l-3 6 3 6h-8.5l-1-1H5a2 2 0 00-2 2zm9-13.5V9" />
+                </svg>
+              </button>
+            </Tooltip>
           </div>
 
           {storeLogo && (
